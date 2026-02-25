@@ -265,7 +265,7 @@ cp .env.example .env
 uv run pre-commit install
 
 # 4. 開発サーバーの起動
-uv run uvicorn src.app.main:app --reload
+uv run uvicorn app.main:app --app-dir src --reload
 # → http://localhost:8000 でアクセス可能
 ```
 
@@ -277,7 +277,7 @@ uv run pytest tests/unit/ -v     # ユニットテストのみ（詳細表示）
 uv run ruff check .              # Lintチェック
 uv run ruff format .             # コードフォーマット
 uv run mypy src                  # 型チェック
-uv run uvicorn src.app.main:app --reload  # 開発サーバー起動
+uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 ```
 
 ---
@@ -418,6 +418,26 @@ def mock_bedrock_client() -> AsyncMock:
 uv run ruff check .   # Lint: エラー0件
 uv run mypy src       # 型チェック: エラー0件
 uv run pytest         # テスト: 全パス
+```
+
+### pre-commit mypy 設定の注意点
+
+pre-commitのmypy hookは独立した仮想環境で動作するため、以下の設定が必要：
+
+**`.pre-commit-config.yaml`**:
+```yaml
+- id: mypy
+  additional_dependencies:
+    - fastapi
+    - anthropic   # ← anthropicの型情報が必要（ないとMessageParam等がAnyになりcastエラーが出る）
+  args: [src]           # ← src/のみをチェック（testsは除外）
+  pass_filenames: false  # ← 変更ファイルを自動追加させない（Duplicate moduleエラー防止）
+```
+
+**`pyproject.toml`**:
+```toml
+[tool.mypy]
+explicit_package_bases = true  # ← src/をパッケージルートとして認識（Duplicate module防止）
 ```
 
 ### デモ観点
