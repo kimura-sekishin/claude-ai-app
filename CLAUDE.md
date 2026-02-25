@@ -1,12 +1,12 @@
 # プロジェクトメモリ
 
-## テンプレートの状態
+## プロジェクト状態
 
-本リポジトリは **Python（uv + FastAPI）版スペック駆動開発テンプレート**として整備済みです。
+本リポジトリは **Python（uv + FastAPI）版スペック駆動開発テンプレート**から派生した **AI討論アプリ（AI Debate）** の開発リポジトリです。
 
-- Python 3.12 + uv + FastAPI の開発環境構築済み
-- Claude Code スキル群（PRD・設計書・ステアリング等）Python 版対応済み
-- 永続ドキュメント（`docs/`）は未作成 → `/setup-project` で作成してください
+- MVPバックエンド・フロントエンド実装済み（Bedrock + Tavily + SSE + Vanilla JS）
+- 永続ドキュメント（`docs/`）作成済み（PRD・機能設計・アーキテクチャ等6ファイル）
+- Claude Code スキル群（ステアリング・add-feature等）利用可能
 
 ## 技術スタック
 
@@ -110,11 +110,11 @@ uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 
 ## 開発プロセス
 
-### 初回セットアップ
+### 初回セットアップ（完了済み）
 
-1. このテンプレートを使用
-2. `/setup-project` で永続的ドキュメント作成(対話的に6つ作成)
-3. `/add-feature [機能]` で機能実装
+1. ~~このテンプレートを使用~~
+2. ~~`/setup-project` で永続的ドキュメント作成~~ → 作成済み（`docs/`配下6ファイル）
+3. `/add-feature [機能]` で機能実装 → MVP実装済み
 
 ### 日常的な使い方
 
