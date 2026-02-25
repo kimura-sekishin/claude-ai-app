@@ -83,8 +83,6 @@ uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 
 命名規則: `YYYYMMDD-kebab-case-task-name` 形式（例: `20260224-add-question-tool`）
 
-#### ステアリングファイルの管理
-
 **作業計画・実装・検証時は`steering`スキルを使用してください。**
 
 - **作業計画時**: `Skill('steering')`でモード1(ステアリングファイル作成)
@@ -133,7 +131,7 @@ uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 
 **基本は普通に会話で依頼してください:**
 
-```bash
+```text
 # ドキュメントの編集
 > PRDに新機能を追加してください
 > architecture.mdのパフォーマンス要件を見直して
@@ -148,16 +146,3 @@ uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 
 **ポイント**: スペック駆動開発の詳細を意識する必要はありません。Claude Codeが適切なスキルを判断してロードします。
 
-## ドキュメント管理の原則
-
-### 永続的ドキュメント(`docs/`)
-
-- 基本設計を記述
-- 頻繁に更新されない
-- プロジェクト全体の「北極星」
-
-### 作業単位のドキュメント(`.steering/`)
-
-- 特定の作業に特化
-- 作業ごとに新規作成
-- 履歴として保持

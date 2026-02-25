@@ -9,6 +9,7 @@
 ## 機能
 
 - **ペルソナ設定**: 2つのAIキャラクターの名前・立場を自由に入力
+- **テーマ入力**: 議論させたいトピックを自由に設定
 - **リアルタイム議論**: SSE（Server-Sent Events）でAIの発言をストリーミング表示
 - **Web検索ツール**: AIが自律的にTavily APIで検索し、根拠を持って議論
 - **議論まとめ**: 全ターン終了後に両者の主張と結論を自動生成
@@ -30,7 +31,7 @@
 - Docker（Dev Container使用時）
 - AWS アカウント（Bedrock の `bedrock:InvokeModel` 権限付き IAM ユーザーまたはロール）
 - [Tavily](https://tavily.com) の API キー
-- AWS Bedrock で `claude-sonnet-4-6` のモデルアクセスを有効化済み
+- AWS Bedrock で `claude-sonnet-4-6` のモデルアクセスを有効化済み（[AWS コンソール > Bedrock > モデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) から申請）
 
 ---
 
@@ -46,7 +47,7 @@ Visual Studio Codeで「Reopen in Container」を選択すると、以下が自�
 
 > Dockerのインストールが事前に必要です。
 
-**Dev Containerを使わない場合:**
+**Dev Containerを使わない場合（Python 3.12以上が必要）:**
 
 ```bash
 pip install uv
@@ -66,7 +67,7 @@ cp .env.example .env
 AWS_ACCESS_KEY_ID=<your-key>
 AWS_SECRET_ACCESS_KEY=<your-secret>
 AWS_REGION=us-east-1
-TAVILY_API_KEY=<your-key>
+TAVILY_API_KEY=<your-key>    # https://app.tavily.com でサインアップして取得
 ```
 
 ### 3. 開発サーバーを起動
@@ -95,7 +96,8 @@ uv run ruff format .       # フォーマット
 ```
 src/app/
 ├── main.py                  # FastAPIアプリ起動・静的ファイル配信
-├── routers/debate.py        # APIエンドポイント (POST /start, GET /stream)
+├── routers/
+│   └── debate.py               # APIエンドポイント (POST /start, GET /stream)
 ├── services/
 │   ├── debate_orchestrator.py  # 議論全体の進行管理
 │   └── agent_runner.py         # 1ペルソナ1ターンのエージェント実行
