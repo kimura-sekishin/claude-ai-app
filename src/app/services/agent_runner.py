@@ -39,6 +39,7 @@ _WEB_SEARCH_TOOL: ToolParam = cast(
 )
 
 _MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+MAX_SEARCHES_PER_TURN = 2
 
 
 def _build_system_prompt(persona: Persona, theme: str) -> str:
@@ -47,7 +48,8 @@ def _build_system_prompt(persona: Persona, theme: str) -> str:
         f"{persona.description}\n\n"
         f"テーマ「{theme}」について議論してください。\n"
         "相手の主張に対して、あなたの立場から論理的に反論・主張してください。\n"
-        "根拠が必要な場合はweb_searchツールを使って最新情報を検索してください。\n"
+        "最新の統計・直近のニュース・リアルタイムデータが必要な場合のみweb_searchを使用してください。\n"
+        "一般的な知識や論理的推論で対応できる場合は検索しないでください。\n"
         "発言は200〜400字程度にまとめてください。"
     )
 
@@ -125,6 +127,7 @@ class AgentRunner:
         system_prompt = _build_system_prompt(persona, theme)
         messages = _build_messages(history, speaker, theme)
         tool_calls_log: list[ToolCall] = []
+        search_count = 0
 
         try:
             response = await self._client.messages.create(
@@ -167,6 +170,8 @@ class AgentRunner:
                     search_result = "検索結果を取得できませんでした。"
                     result_summary = "検索に失敗しました"
 
+                search_count += 1
+
                 # tool_end イベント
                 await event_queue.put(
                     {
@@ -193,7 +198,7 @@ class AgentRunner:
                     }
                 )
 
-            # tool_result を追加して再呼び出し
+            # tool_result を追加して再呼び出し（上限到達後はtools=[]でツールを無効化）
             extra = cast(
                 list[MessageParam],
                 [
@@ -202,13 +207,16 @@ class AgentRunner:
                 ],
             )
             messages = list(messages) + extra
+            next_tools = (
+                [] if search_count >= MAX_SEARCHES_PER_TURN else [_WEB_SEARCH_TOOL]
+            )
 
             try:
                 response = await self._client.messages.create(
                     model=_MODEL_ID,
                     max_tokens=1024,
                     system=system_prompt,
-                    tools=[_WEB_SEARCH_TOOL],
+                    tools=next_tools,
                     messages=messages,
                 )
             except Exception as e:

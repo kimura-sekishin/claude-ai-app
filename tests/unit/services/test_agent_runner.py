@@ -6,7 +6,7 @@ import pytest
 
 from app.models.debate import DebateEventQueue, DebateTurn, Persona
 from app.models.errors import LLMError, SearchError
-from app.services.agent_runner import AgentRunner
+from app.services.agent_runner import MAX_SEARCHES_PER_TURN, AgentRunner
 
 
 def _make_text_block(text: str) -> MagicMock:
@@ -233,3 +233,51 @@ class TestAgentRunnerLLMError:
                 event_queue=event_queue,
                 speaker="persona_a",
             )
+
+
+class TestAgentRunnerSearchLimit:
+    async def test_検索上限到達後はtools空リストで呼び出される(
+        self,
+        agent_runner: AgentRunner,
+        event_queue: DebateEventQueue,
+        persona_a: Persona,
+    ) -> None:
+        # Given: MAX_SEARCHES_PER_TURN回のtool_useの後にテキストを返すモック
+        tool_responses = [
+            _make_response(
+                stop_reason="tool_use",
+                content=[_make_tool_use_block(f"tool-{i:03}", f"クエリ{i}")],
+            )
+            for i in range(MAX_SEARCHES_PER_TURN)
+        ]
+        text_response = _make_response(
+            stop_reason="end_turn",
+            content=[_make_text_block("上限到達後の発言")],
+        )
+        agent_runner._client.messages.create = AsyncMock(  # type: ignore[attr-defined]
+            side_effect=[*tool_responses, text_response]
+        )
+        agent_runner._search_tool.search = AsyncMock(  # type: ignore[attr-defined]
+            return_value="検索結果"
+        )
+
+        # When
+        result = await agent_runner.run(
+            persona=persona_a,
+            theme="テーマ",
+            history=[],
+            event_queue=event_queue,
+            speaker="persona_a",
+        )
+
+        # Then: 合計 MAX_SEARCHES_PER_TURN + 1 回のAPIコール
+        mock_create = agent_runner._client.messages.create  # type: ignore[attr-defined]
+        assert mock_create.call_count == MAX_SEARCHES_PER_TURN + 1
+
+        # Then: 最後のAPIコール（上限到達後）は tools=[] で呼ばれる
+        last_call_kwargs = mock_create.call_args_list[-1].kwargs
+        assert last_call_kwargs["tools"] == []
+
+        # Then: DebateTurn に MAX_SEARCHES_PER_TURN 分のツール呼び出しが記録される
+        assert len(result.tool_calls) == MAX_SEARCHES_PER_TURN
+        assert result.content == "上限到達後の発言"
