@@ -4,9 +4,18 @@
 
 本リポジトリは **Python（uv + FastAPI）版スペック駆動開発テンプレート**から派生した **AI討論アプリ（AI Debate）** の開発リポジトリです。
 
-- MVPバックエンド・フロントエンド実装済み（Bedrock + Tavily + SSE + Vanilla JS）
+- MVP実装済み: ペルソナ設定・往復議論（SSEストリーミング）・Web検索（Tavily）・最終まとめ出力
 - 永続ドキュメント（`docs/`）作成済み（PRD・機能設計・アーキテクチャ等6ファイル）
 - Claude Code スキル群（ステアリング・add-feature等）利用可能
+
+### 主要実装ファイル
+
+- `src/app/routers/debate.py` - SSEエンドポイント
+- `src/app/services/debate_orchestrator.py` - 議論進行制御
+- `src/app/services/agent_runner.py` - 1エージェント実行（tool_useループ）
+- `src/app/infra/web_search.py` - Tavily Web検索
+- `src/app/infra/session_store.py` - セッション管理
+- `src/app/static/index.html` - フロントエンド（Vanilla JS + SSE、単一ファイル）
 
 ## 技術スタック
 
@@ -18,6 +27,10 @@
 - Lint/Format: ruff
 - 型チェック: mypy
 - Gitフック: pre-commit
+
+### 環境変数
+
+`.env.example` を `.env` にコピーして `AWS_ACCESS_KEY_ID`・`AWS_SECRET_ACCESS_KEY`・`AWS_REGION`・`TAVILY_API_KEY` を設定する。
 
 ### よく使うコマンド
 
@@ -68,7 +81,7 @@ uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 - `design.md`: 実装アプローチ
 - `tasklist.md`: 具体的なタスクリスト
 
-命名規則: `20250115-add-user-profile` 形式
+命名規則: `YYYYMMDD-kebab-case-task-name` 形式（例: `20260224-add-question-tool`）
 
 #### ステアリングファイルの管理
 

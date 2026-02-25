@@ -11,21 +11,20 @@ claude-ai-app/                    # プロジェクトルート
 │       ├── routers/              # APIレイヤー（FastAPI Router）
 │       │   └── debate.py         # 議論セッション関連エンドポイント
 │       ├── services/             # サービスレイヤー（ビジネスロジック）
-│       │   ├── orchestrator.py   # DebateOrchestrator（議論制御）
-│       │   └── agent_runner.py   # AgentRunner（1エージェント実行）
+│       │   ├── debate_orchestrator.py # DebateOrchestrator（議論制御）
+│       │   └── agent_runner.py        # AgentRunner（1エージェント実行）
 │       ├── infra/                # インフラレイヤー（外部依存）
-│       │   ├── bedrock_client.py # AWS Bedrock経由のClaude呼び出し
-│       │   └── web_search.py     # Tavily Web検索ツール
+│       │   ├── web_search.py     # Tavily Web検索ツール
+│       │   └── session_store.py  # セッション管理
 │       ├── models/               # データモデル定義（dataclass）
 │       │   └── debate.py         # Persona, DebateSession等の型定義
 │       └── static/               # フロントエンド静的ファイル
-│           ├── index.html        # 設定画面・議論画面（SPA）
-│           ├── style.css         # スタイルシート
-│           └── app.js            # SSEクライアント・UI制御
+│           └── index.html        # 設定画面・議論画面・CSS・JS（単一ファイルSPA）
 ├── tests/                        # テストコード
 │   ├── unit/                     # ユニットテスト
 │   │   ├── services/
-│   │   │   └── test_orchestrator.py
+│   │   │   ├── test_debate_orchestrator.py
+│   │   │   └── test_agent_runner.py
 │   │   └── infra/
 │   │       └── test_web_search.py
 │   └── integration/              # 統合テスト
@@ -84,7 +83,7 @@ routers/
 **役割**: ビジネスロジックの実装（議論制御・エージェント実行）
 
 **配置ファイル**:
-- `orchestrator.py`: `DebateOrchestrator` クラス（ターン管理・まとめ生成）
+- `debate_orchestrator.py`: `DebateOrchestrator` クラス（ターン管理・まとめ生成）
 - `agent_runner.py`: `AgentRunner` クラス（tool_useループ・1ターン発言生成）
 
 **命名規則**:
@@ -97,8 +96,8 @@ routers/
 
 ```
 services/
-├── orchestrator.py  # DebateOrchestrator: 議論全体の制御
-└── agent_runner.py  # AgentRunner: 1エージェントの発言生成
+├── debate_orchestrator.py  # DebateOrchestrator: 議論全体の制御
+└── agent_runner.py         # AgentRunner: 1エージェントの発言生成
 ```
 
 ---
@@ -108,11 +107,11 @@ services/
 **役割**: 外部サービスとの通信（AWS Bedrock, Tavily）
 
 **配置ファイル**:
-- `bedrock_client.py`: `AnthropicBedrock` クライアントのラッパー
 - `web_search.py`: `WebSearchTool` クラス（Tavily APIのラッパー）
+- `session_store.py`: `SessionStore` クラス（セッション管理）
 
 **命名規則**:
-- ファイル名: 外部サービス名または役割 snake_case（例: `bedrock_client.py`）
+- ファイル名: 外部サービス名または役割 snake_case（例: `web_search.py`）
 
 **依存関係**:
 - 依存可能: `models/`、外部ライブラリ（anthropic, tavily-python）
@@ -120,8 +119,8 @@ services/
 
 ```
 infra/
-├── bedrock_client.py  # AWS BedrockでClaudeを呼び出す
-└── web_search.py      # Tavily APIでWeb検索する
+├── web_search.py     # Tavily APIでWeb検索する
+└── session_store.py  # セッションデータをメモリ管理する
 ```
 
 ---
@@ -153,17 +152,13 @@ models/
 **役割**: HTML/CSS/JSによるフロントエンド一式
 
 **配置ファイル**:
-- `index.html`: ペルソナ設定フォーム + 議論表示画面（単一ページ）
-- `style.css`: スタイルシート
-- `app.js`: SSE接続・UIイベント処理・発言バブル描画
+- `index.html`: HTML・CSS・JS をすべて含む単一ファイルSPA（設定画面 + 議論画面）
 
 **配信方法**: FastAPIの `StaticFiles` で `/` にマウント
 
 ```
 static/
-├── index.html   # SPA（設定画面 + 議論画面を1ファイルで管理）
-├── style.css    # スタイル定義
-└── app.js       # フロントエンドロジック
+└── index.html   # SPA（設定画面 + 議論画面 + スタイル + ロジックを1ファイルで管理）
 ```
 
 ---
@@ -178,9 +173,10 @@ static/
 ```
 tests/unit/
 ├── services/
-│   └── test_orchestrator.py   # DebateOrchestratorのターン管理ロジック
+│   ├── test_debate_orchestrator.py  # DebateOrchestratorのターン管理ロジック
+│   └── test_agent_runner.py         # AgentRunnerのtool_useループ
 └── infra/
-    └── test_web_search.py     # WebSearchToolの正常系・エラー系
+    └── test_web_search.py           # WebSearchToolの正常系・エラー系
 ```
 
 **命名規則**: `test_[対象ファイル名].py`
@@ -206,8 +202,8 @@ tests/integration/
 | ファイル種別 | 配置先 | 命名規則 | 例 |
 |------------|--------|---------|-----|
 | FastAPI Router | `src/app/routers/` | `[リソース名].py` | `debate.py` |
-| サービスクラス | `src/app/services/` | `[役割]_[種別].py` | `orchestrator.py` |
-| インフラクラス | `src/app/infra/` | `[外部サービス名].py` | `bedrock_client.py` |
+| サービスクラス | `src/app/services/` | `[役割]_[種別].py` | `debate_orchestrator.py` |
+| インフラクラス | `src/app/infra/` | `[外部サービス名].py` | `web_search.py` |
 | データモデル | `src/app/models/` | `[ドメイン名].py` | `debate.py` |
 | 静的ファイル | `src/app/static/` | 自由（Web標準に従う） | `index.html` |
 
@@ -215,7 +211,7 @@ tests/integration/
 
 | テスト種別 | 配置先 | 命名規則 | 例 |
 |-----------|--------|---------|-----|
-| ユニットテスト | `tests/unit/[layer]/` | `test_[対象].py` | `test_orchestrator.py` |
+| ユニットテスト | `tests/unit/[layer]/` | `test_[対象].py` | `test_debate_orchestrator.py` |
 | 統合テスト | `tests/integration/` | `test_[機能].py` | `test_debate_api.py` |
 
 ### 環境変数ファイル
