@@ -1,10 +1,14 @@
 [project]
-name = "claude-code-python"
+name = "claude-ai-app"
 version = "0.1.0"
 description = "Claude Code book - Chapter 8 template (Python)"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic[bedrock]>=0.83.0",
     "fastapi>=0.115.0",
+    "python-dotenv>=1.2.1",
+    "sse-starlette>=3.2.0",
+    "tavily-python>=0.7.21",
     "uvicorn[standard]>=0.32.0",
 ]
 
@@ -16,6 +20,7 @@ dev = [
     "ruff>=0.8.0",
     "mypy>=1.13.0",
     "pre-commit>=4.0.0",
+    "pytest-cov>=7.0.0",
 ]
 
 [tool.ruff]
@@ -24,11 +29,15 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP"]
+# N802: 日本語テスト関数名（Given-When-Then形式）はプロジェクト規約として許容
+ignore = ["N802"]
 
 [tool.mypy]
 strict = true
 ignore_missing_imports = true
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = ["src"]

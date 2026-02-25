@@ -26,7 +26,7 @@ uv run pytest              # テスト実行
 uv run ruff check .        # lintチェック
 uv run ruff format .       # フォーマット
 uv run mypy src            # 型チェック
-uv run uvicorn src.app.main:app --reload  # 開発サーバー起動
+uv run uvicorn app.main:app --app-dir src --reload  # 開発サーバー起動
 ```
 
 ## スペック駆動開発の基本原則

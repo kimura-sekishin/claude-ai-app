@@ -1,18 +1,18 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="claude-code-python", version="0.1.0")
+from app.routers import debate
 
+load_dotenv()
 
-@app.get("/")
-async def root() -> dict[str, str]:
-    return {"message": "Hello World"}
+app = FastAPI(title="AI討論 / AI Debate", version="0.1.0")
 
+app.include_router(debate.router)
 
-@app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.get("/items/{item_id}")
-async def get_item(item_id: int, name: str | None = None) -> dict[str, object]:
-    return {"item_id": item_id, "name": name}
+# 静的ファイル配信（フロントエンド）
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_static_dir):
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")

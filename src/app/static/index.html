@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI討論 / AI Debate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    /* ===== 共通ヘッダー ===== */
+    .app-header {
+      background: #1e293b;
+      color: #fff;
+      padding: 16px 24px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-header .subtitle {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: #94a3b8;
+      margin-left: 8px;
+    }
+
+    /* ===== 設定画面 ===== */
+    #config-view {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    .section-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-card h2 .badge {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      line-height: 20px;
+      text-align: center;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .badge-a { background: #3B82F6; }
+    .badge-b { background: #EF4444; }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #1e293b;
+      background: #f8fafc;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #3B82F6;
+      background: #fff;
+    }
+
+    .form-group textarea {
+      min-height: 72px;
+    }
+
+    .theme-section h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    #start-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #1e293b;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      margin-top: 8px;
+    }
+
+    #start-btn:hover:not(:disabled) { background: #334155; }
+    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ===== 議論画面 ===== */
+    #debate-view {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    #debate-theme-display {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #475569;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+    }
+
+    #debate-theme-display .label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* ===== 発言バブル ===== */
+    .turn-bubble {
+      background: #fff;
+      border-radius: 12px;
+      border: 1.5px solid #e2e8f0;
+      border-left-width: 4px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .turn-bubble.persona-a { border-left-color: #3B82F6; }
+    .turn-bubble.persona-b { border-left-color: #EF4444; }
+
+    .turn-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .speaker-icon { font-size: 1rem; }
+    .speaker-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .persona-a .speaker-name { color: #3B82F6; }
+    .persona-b .speaker-name { color: #EF4444; }
+
+    .tool-log {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 0.82rem;
+      color: #6B7280;
+    }
+
+    .tool-log .tool-query {
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    .turn-content {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #334155;
+      white-space: pre-wrap;
+    }
+
+    .loading-text {
+      color: #94a3b8;
+      font-style: italic;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ===== まとめセクション ===== */
+    #summary-section {
+      background: #f0fdf4;
+      border: 2px solid #10B981;
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-top: 8px;
+      animation: slideIn 0.3s ease;
+    }
+
+    #summary-section h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #059669;
+      margin-bottom: 12px;
+    }
+
+    #summary-content {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #1e293b;
+      white-space: pre-wrap;
+    }
+
+    /* ===== エラー表示 ===== */
+    #error-banner {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #dc2626;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ===== フッターボタン ===== */
+    .debate-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(248,250,252,0.9);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid #e2e8f0;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #restart-btn {
+      padding: 10px 32px;
+      background: #1e293b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #restart-btn:hover { background: #334155; }
+
+    /* ===== 設定画面エラー表示 ===== */
+    #config-error {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #dc2626;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ===== 設定画面 ===== -->
+<div id="config-view">
+  <header class="app-header" style="border-radius: 12px; margin-bottom: 24px;">
+    🗣️ AI討論
+    <span class="subtitle">/ AI Debate</span>
+  </header>
+
+  <form id="config-form" novalidate>
+    <!-- ペルソナ A -->
+    <div class="section-card">
+      <h2>
+        <span class="badge badge-a">A</span>
+        ペルソナ A
+      </h2>
+      <div class="form-group">
+        <label for="persona-a-name">名前</label>
+        <input
+          type="text"
+          id="persona-a-name"
+          placeholder="例: 楽観的なコンサルタント"
+          maxlength="50"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="persona-a-description">立場・性格</label>
+        <textarea
+          id="persona-a-description"
+          placeholder="例: AI投資に積極的。成長機会を重視して主張する。"
+          maxlength="200"
+          required
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- ペルソナ B -->
+    <div class="section-card">
+      <h2>
+        <span class="badge badge-b">B</span>
+        ペルソナ B
+      </h2>
+      <div class="form-group">
+        <label for="persona-b-name">名前</label>
+        <input
+          type="text"
+          id="persona-b-name"
+          placeholder="例: 慎重なリスクアナリスト"
+          maxlength="50"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="persona-b-description">立場・性格</label>
+        <textarea
+          id="persona-b-description"
+          placeholder="例: リスク管理を重視。データに基づいて反論する。"
+          maxlength="200"
+          required
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- テーマ -->
+    <div class="section-card theme-section">
+      <h2>議論テーマ</h2>
+      <div class="form-group">
+        <label for="theme">テーマ</label>
+        <input
+          type="text"
+          id="theme"
+          placeholder="例: AIベンチャーへの投資はすべきか"
+          maxlength="200"
+          required
+        />
+      </div>
+    </div>
+
+    <div id="config-error" hidden></div>
+    <button type="submit" id="start-btn" disabled>議論スタート</button>
+  </form>
+</div>
+
+<!-- ===== 議論画面 ===== -->
+<div id="debate-view" hidden>
+  <div id="debate-theme-display">
+    <span class="label">議論テーマ</span>
+    <span id="debate-theme-text"></span>
+  </div>
+
+  <div id="error-banner" role="alert"></div>
+
+  <div id="turns-container"></div>
+
+  <div id="summary-section" hidden>
+    <h2>📋 議論のまとめ</h2>
+    <div id="summary-content"></div>
+  </div>
+
+  <div class="debate-footer">
+    <button id="restart-btn" hidden>もう一度</button>
+  </div>
+</div>
+
+<script>
+  'use strict';
+
+  // ===== DOM参照 =====
+  const configView    = document.getElementById('config-view');
+  const debateView    = document.getElementById('debate-view');
+  const configForm    = document.getElementById('config-form');
+  const startBtn      = document.getElementById('start-btn');
+  const turnsContainer = document.getElementById('turns-container');
+  const summarySection = document.getElementById('summary-section');
+  const summaryContent = document.getElementById('summary-content');
+  const errorBanner   = document.getElementById('error-banner');
+  const configError   = document.getElementById('config-error');
+  const debateThemeText = document.getElementById('debate-theme-text');
+  const restartBtn    = document.getElementById('restart-btn');
+
+  // フォームフィールド
+  const fields = [
+    document.getElementById('persona-a-name'),
+    document.getElementById('persona-a-description'),
+    document.getElementById('persona-b-name'),
+    document.getElementById('persona-b-description'),
+    document.getElementById('theme'),
+  ];
+
+  // ===== 状態 =====
+  let currentSource = null;   // EventSource
+  let currentBubble = null;   // 現在構築中の発言バブル要素
+  let currentToolEl = null;   // 現在のツールインジケーター要素
+
+  // ===== バリデーション（入力が全て埋まった時のみボタン有効化） =====
+  function updateStartBtn() {
+    const allFilled = fields.every(f => f.value.trim().length > 0);
+    startBtn.disabled = !allFilled;
+  }
+
+  fields.forEach(f => f.addEventListener('input', updateStartBtn));
+
+  // ===== フォーム送信 =====
+  configForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const config = {
+      persona_a: {
+        name: document.getElementById('persona-a-name').value.trim(),
+        description: document.getElementById('persona-a-description').value.trim(),
+      },
+      persona_b: {
+        name: document.getElementById('persona-b-name').value.trim(),
+        description: document.getElementById('persona-b-description').value.trim(),
+      },
+      theme: document.getElementById('theme').value.trim(),
+    };
+
+    startBtn.disabled = true;
+    startBtn.textContent = '接続中...';
+
+    try {
+      configError.hidden = true;
+      await startDebate(config);
+    } catch (err) {
+      startBtn.disabled = false;
+      startBtn.textContent = '議論スタート';
+      configError.textContent = '⚠️ 議論の開始に失敗しました: ' + (err.message || 'エラーが発生しました');
+      configError.hidden = false;
+    }
+  });
+
+  // ===== 議論開始 =====
+  async function startDebate(config) {
+    // POST /api/debate/start
+    const res = await fetch('/api/debate/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `サーバーエラー (${res.status})`);
+    }
+
+    const { session_id } = await res.json();
+
+    // 議論画面に切り替え
+    showDebateView(config.theme);
+
+    // SSE接続
+    connectSSE(session_id);
+  }
+
+  // ===== SSE接続 =====
+  function connectSSE(sessionId) {
+    if (currentSource) {
+      currentSource.close();
+    }
+
+    currentSource = new EventSource(`/api/debate/${sessionId}/stream`);
+
+    currentSource.onmessage = (e) => {
+      try {
+        const event = JSON.parse(e.data);
+        handleEvent(event);
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    currentSource.onerror = () => {
+      // complete 受信後に currentSource は null になっている場合があるためガードする
+      if (!currentSource) return;
+      currentSource.close();
+      currentSource = null;
+      showError('SSE接続が切断されました。ページを再読み込みしてください。');
+    };
+  }
+
+  // ===== イベントハンドラー =====
+  function handleEvent(event) {
+    switch (event.type) {
+      case 'turn_start':
+        handleTurnStart(event.speaker, event.name);
+        break;
+      case 'token':
+        handleToken(event.text);
+        break;
+      case 'tool_start':
+        handleToolStart(event.query);
+        break;
+      case 'tool_end':
+        handleToolEnd(event.result_summary);
+        break;
+      case 'turn_end':
+        handleTurnEnd();
+        break;
+      case 'summary_start':
+        handleSummaryStart();
+        break;
+      case 'summary_token':
+        handleSummaryToken(event.text);
+        break;
+      case 'complete':
+        handleComplete();
+        break;
+      case 'error':
+        handleError(event.message || '予期せぬエラーが発生しました');
+        break;
+    }
+  }
+
+  function handleTurnStart(speaker, name) {
+    currentToolEl = null;
+
+    // speaker をホワイトリストで検証してCSSクラスへの任意文字列注入を防ぐ
+    const safeClass = speaker === 'persona_a' ? 'persona_a' : 'persona_b';
+    const bubble = document.createElement('div');
+    bubble.className = `turn-bubble ${safeClass}`;
+
+    const icon = safeClass === 'persona_a' ? '🔵' : '🔴';
+
+    bubble.innerHTML = `
+      <div class="turn-header">
+        <span class="speaker-icon">${escHtml(icon)}</span>
+        <span class="speaker-name">${escHtml(name)}</span>
+      </div>
+      <div class="turn-content">
+        <span class="loading-text">✍️ 考え中...</span>
+      </div>
+    `;
+
+    turnsContainer.appendChild(bubble);
+    bubble.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    currentBubble = bubble;
+  }
+
+  function handleToken(text) {
+    if (!currentBubble) return;
+    const contentEl = currentBubble.querySelector('.turn-content');
+    if (contentEl) {
+      contentEl.textContent = text;
+    }
+  }
+
+  function handleToolStart(query) {
+    if (!currentBubble) return;
+
+    const toolEl = document.createElement('div');
+    toolEl.className = 'tool-log';
+    toolEl.innerHTML = `🔍 Web検索中: <span class="tool-query">"${escHtml(query)}"</span>...`;
+
+    // turn-content の前に挿入
+    const contentEl = currentBubble.querySelector('.turn-content');
+    currentBubble.insertBefore(toolEl, contentEl);
+    currentToolEl = toolEl;
+  }
+
+  function handleToolEnd(resultSummary) {
+    if (!currentToolEl) return;
+    const query = currentToolEl.querySelector('.tool-query');
+    // textContent で取得した値も escHtml でエスケープしてから innerHTML に再挿入する
+    const queryText = query ? query.textContent : '';
+    currentToolEl.innerHTML = `✅ Web検索完了: <span class="tool-query">${escHtml(queryText)}</span> — ${escHtml(resultSummary || '')}`;
+    currentToolEl = null;
+  }
+
+  function handleTurnEnd() {
+    // ローディングが残っている場合は除去（tokenが先に来ているはずだが念のため）
+    if (currentBubble) {
+      const loading = currentBubble.querySelector('.loading-text');
+      if (loading) {
+        loading.remove();
+      }
+    }
+    currentBubble = null;
+  }
+
+  function handleSummaryStart() {
+    summarySection.hidden = false;
+    summaryContent.textContent = '';
+    summarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function handleSummaryToken(text) {
+    summaryContent.textContent = text;
+  }
+
+  function handleComplete() {
+    if (currentSource) {
+      currentSource.close();
+      currentSource = null;
+    }
+    restartBtn.hidden = false;
+    restartBtn.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function handleError(message) {
+    if (currentSource) {
+      currentSource.close();
+      currentSource = null;
+    }
+    showError(message);
+    restartBtn.hidden = false;
+  }
+
+  // ===== 画面切り替え =====
+  function showDebateView(theme) {
+    configView.hidden = true;
+    debateView.hidden = false;
+    debateThemeText.textContent = theme;
+    turnsContainer.innerHTML = '';
+    summarySection.hidden = true;
+    summaryContent.textContent = '';
+    errorBanner.style.display = 'none';
+    restartBtn.hidden = true;
+    currentBubble = null;
+    currentToolEl = null;
+  }
+
+  function showConfigView() {
+    debateView.hidden = true;
+    configView.hidden = false;
+    startBtn.textContent = '議論スタート';
+    updateStartBtn();
+  }
+
+  function showError(message) {
+    errorBanner.textContent = '⚠️ ' + message;
+    errorBanner.style.display = 'block';
+    errorBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ===== 「もう一度」ボタン =====
+  restartBtn.addEventListener('click', () => {
+    if (currentSource) {
+      currentSource.close();
+      currentSource = null;
+    }
+    showConfigView();
+  });
+
+  // ===== ユーティリティ =====
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+</script>
+</body>
+</html>

@@ -6,7 +6,13 @@
       "Skill(architecture-design)",
       "Skill(repository-structure)",
       "Skill(development-guidelines)",
-      "Skill(glossary-creation)"
+      "Skill(glossary-creation)",
+      "Bash(python3 -c \":*)",
+      "Bash(uv run pytest)",
+      "Bash(uv run pytest --tb=short)",
+      "Bash(uv run pytest --cov=src --cov-report=term-missing)",
+      "Bash(git add .)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

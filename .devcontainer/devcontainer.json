@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-python",
+  "name": "claude-ai-app",
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
