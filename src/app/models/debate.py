@@ -44,6 +44,16 @@ class Persona:
     description: str
 
 
+DEFAULT_PERSONA_A = Persona(
+    name="賛成派",
+    description="議論テーマに対して賛成・肯定的な立場から論理的に主張する",
+)
+DEFAULT_PERSONA_B = Persona(
+    name="反対派",
+    description="議論テーマに対して反対・否定的な立場から論理的に主張する",
+)
+
+
 @dataclass
 class DebateConfig:
     persona_a: Persona
@@ -79,13 +89,13 @@ class DebateSession:
 
 
 class PersonaInput(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
-    description: str = Field(min_length=1, max_length=200)
+    name: str = Field(default="", max_length=50)
+    description: str = Field(default="", max_length=200)
 
 
 class DebateStartRequest(BaseModel):
-    persona_a: PersonaInput
-    persona_b: PersonaInput
+    persona_a: PersonaInput = Field(default_factory=PersonaInput)
+    persona_b: PersonaInput = Field(default_factory=PersonaInput)
     theme: str = Field(min_length=1, max_length=200)
 
 

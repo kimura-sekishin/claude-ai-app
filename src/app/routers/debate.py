@@ -8,17 +8,29 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.infra import session_store
 from app.models.debate import (
+    DEFAULT_PERSONA_A,
+    DEFAULT_PERSONA_B,
     DebateConfig,
     DebateSession,
     DebateStartRequest,
     DebateStartResponse,
     DebateStatus,
     Persona,
+    PersonaInput,
 )
 from app.models.errors import SessionNotFoundError
 from app.services.debate_orchestrator import DebateOrchestrator
 
 router = APIRouter(prefix="/api/debate", tags=["debate"])
+
+
+def _to_persona(inp: PersonaInput, default: Persona) -> Persona:
+    """PersonaInputをPersonaに変換する。空欄はデフォルト値で補完する。"""
+    return Persona(
+        name=inp.name.strip() or default.name,
+        description=inp.description.strip() or default.description,
+    )
+
 
 # バックグラウンドタスクへの参照を保持（GCによる早期破棄を防ぐ）
 _background_tasks: set[asyncio.Task[None]] = set()
@@ -33,14 +45,8 @@ async def start_debate(request: DebateStartRequest) -> DebateStartResponse:
     session_id = str(uuid.uuid4())
 
     config = DebateConfig(
-        persona_a=Persona(
-            name=request.persona_a.name,
-            description=request.persona_a.description,
-        ),
-        persona_b=Persona(
-            name=request.persona_b.name,
-            description=request.persona_b.description,
-        ),
+        persona_a=_to_persona(request.persona_a, DEFAULT_PERSONA_A),
+        persona_b=_to_persona(request.persona_b, DEFAULT_PERSONA_B),
         theme=request.theme,
     )
     session = DebateSession(

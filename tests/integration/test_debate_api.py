@@ -3,6 +3,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.infra import session_store
 from app.main import app
+from app.models.debate import DEFAULT_PERSONA_A, DEFAULT_PERSONA_B
 
 BASE_URL = "http://testserver"
 
@@ -45,18 +46,48 @@ class TestStartDebate:
         assert isinstance(data["session_id"], str)
         assert len(data["session_id"]) == 36  # UUID形式
 
-    async def test_異常系_persona_a_name空文字で422(self, client: AsyncClient) -> None:
-        # Given
-        invalid_request = {
-            **VALID_REQUEST,
-            "persona_a": {"name": "", "description": "説明"},
+    async def test_正常系_テーマのみで開始できる(self, client: AsyncClient) -> None:
+        # Given: ペルソナ省略、テーマのみ
+        request = {"theme": "AIベンチャーへの投資はすべきか"}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then: デフォルトペルソナで200が返る
+        assert response.status_code == 200
+        session_id = response.json()["session_id"]
+        assert session_id
+        # デフォルトペルソナが適用されていることを値レベルで確認
+        session = session_store.get_session(session_id)
+        assert session.config.persona_a.name == DEFAULT_PERSONA_A.name
+        assert session.config.persona_b.name == DEFAULT_PERSONA_B.name
+
+    async def test_正常系_名前のみ指定で200が返る(self, client: AsyncClient) -> None:
+        # Given: 名前のみ指定（説明は省略）
+        request = {
+            "persona_a": {"name": "AI推進派"},
+            "persona_b": {"name": "AI懐疑派"},
+            "theme": "AIは社会を豊かにするか",
         }
 
         # When
-        response = await client.post("/api/debate/start", json=invalid_request)
+        response = await client.post("/api/debate/start", json=request)
 
         # Then
-        assert response.status_code == 422
+        assert response.status_code == 200
+
+    async def test_正常系_空白入力でデフォルト適用(self, client: AsyncClient) -> None:
+        # Given: 空白のみ（strip後に空になる）
+        request = {
+            **VALID_REQUEST,
+            "persona_a": {"name": "   ", "description": "   "},
+        }
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then: デフォルトにフォールバックして200
+        assert response.status_code == 200
 
     async def test_異常系_theme空文字で422(self, client: AsyncClient) -> None:
         # Given
