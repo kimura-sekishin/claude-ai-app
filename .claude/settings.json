@@ -12,10 +12,18 @@
       "Bash(uv run pytest --tb=short)",
       "Bash(uv run pytest --cov=src --cov-report=term-missing)",
       "Bash(git add .)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(uv run pytest tests/integration/test_debate_api.py -v)",
+      "Bash(uv run pytest tests/integration/test_debate_api.py -v --tb=long)",
+      "Bash(uv run pytest --cov=src/app/routers --cov-report=term-missing)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(git add src/app/models/debate.py src/app/routers/debate.py src/app/static/index.html tests/integration/test_debate_api.py tests/unit/routers/)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/workspaces/claude-ai-app/.steering"
+    ]
   },
   "hooks": {}
 }
