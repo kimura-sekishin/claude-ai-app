@@ -17,16 +17,21 @@ claude-ai-app/                    # プロジェクトルート
 │       │   ├── web_search.py     # Tavily Web検索ツール
 │       │   └── session_store.py  # セッション管理
 │       ├── models/               # データモデル定義（dataclass）
-│       │   └── debate.py         # Persona, DebateSession等の型定義
+│       │   ├── debate.py         # Persona, DebateSession等の型定義
+│       │   └── errors.py         # カスタム例外クラス定義
 │       └── static/               # フロントエンド静的ファイル
 │           └── index.html        # 設定画面・議論画面・CSS・JS（単一ファイルSPA）
 ├── tests/                        # テストコード
+│   ├── test_app.py               # アプリ起動・ルーティングのスモークテスト
 │   ├── unit/                     # ユニットテスト
 │   │   ├── services/
 │   │   │   ├── test_debate_orchestrator.py
 │   │   │   └── test_agent_runner.py
-│   │   └── infra/
-│   │       └── test_web_search.py
+│   │   ├── infra/
+│   │   │   ├── test_web_search.py
+│   │   │   └── test_session_store.py
+│   │   └── routers/
+│   │       └── test_debate_router.py
 │   └── integration/              # 統合テスト
 │       └── test_debate_api.py
 ├── docs/                         # プロジェクトドキュメント
@@ -37,13 +42,18 @@ claude-ai-app/                    # プロジェクトルート
 │   ├── repository-structure.md   # 本ドキュメント
 │   ├── development-guidelines.md # 開発ガイドライン
 │   └── glossary.md               # 用語集
+├── scripts/                      # 運用スクリプト
+│   └── deploy-ecr.ps1            # ECRへのDockerイメージプッシュ（PowerShell用）
 ├── .steering/                    # 作業単位のステアリングファイル
 ├── .claude/                      # Claude Code設定
 │   ├── commands/                 # スラッシュコマンド定義
 │   ├── skills/                   # スキル定義
-│   └── agents/                   # サブエージェント定義
+│   ├── agents/                   # サブエージェント定義
+│   └── settings.json             # Claude Code設定ファイル
 ├── .env.example                  # 環境変数テンプレート（Gitに含める）
 ├── .env                          # 実際の認証情報（Gitに含めない）
+├── Dockerfile                    # Dockerイメージビルド設定（ECR・App Runner用）
+├── apprunner.yaml                # AWS App Runnerデプロイ設定
 ├── pyproject.toml                # プロジェクト設定・依存関係管理
 ├── uv.lock                       # 依存関係ロックファイル
 ├── CLAUDE.md                     # Claude Code向けプロジェクトメモリ
@@ -131,6 +141,7 @@ infra/
 
 **配置ファイル**:
 - `debate.py`: `Persona`, `DebateConfig`, `DebateTurn`, `DebateSession`, `ToolCall` 等
+- `errors.py`: カスタム例外クラス（`DebateError`, `SessionNotFoundError` 等）
 
 **命名規則**:
 - ファイル名: ドメイン名 snake_case（例: `debate.py`）
@@ -142,7 +153,8 @@ infra/
 
 ```
 models/
-└── debate.py  # Persona, DebateConfig, DebateTurn, DebateSession, ToolCall
+├── debate.py   # Persona, DebateConfig, DebateTurn, DebateSession, ToolCall
+└── errors.py   # カスタム例外クラス定義
 ```
 
 ---
@@ -175,8 +187,11 @@ tests/unit/
 ├── services/
 │   ├── test_debate_orchestrator.py  # DebateOrchestratorのターン管理ロジック
 │   └── test_agent_runner.py         # AgentRunnerのtool_useループ
-└── infra/
-    └── test_web_search.py           # WebSearchToolの正常系・エラー系
+├── infra/
+│   ├── test_web_search.py           # WebSearchToolの正常系・エラー系
+│   └── test_session_store.py        # SessionStoreのCRUD操作
+└── routers/
+    └── test_debate_router.py        # debateルーターのエンドポイント
 ```
 
 **命名規則**: `test_[対象ファイル名].py`

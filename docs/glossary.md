@@ -50,7 +50,7 @@
 
 **定義**: 1ペルソナが発言する1回分の単位。ツール使用と発言テキストを含む。
 
-**説明**: ペルソナAが発言 → ペルソナBが発言 = 1往復。MVPでは3〜5往復（6〜10ターン）実施する。
+**説明**: ペルソナAが発言 → ペルソナBが発言 = 1ラウンド（往復）。MVPではデフォルト4ラウンド（A・B各4発言、計8ターン）実施する。
 
 **関連用語**: [ツール呼び出し](#ツール呼び出し)、[議論セッション](#議論セッション)
 
@@ -113,11 +113,13 @@
 
 **定義**: AWSが提供するマネージドAIサービス。複数のLLMをAPIとして利用できる。
 
-**本プロジェクトでの用途**: Claude（claude-sonnet-4-6）の呼び出しに使用。AWSアクセスキーで認証するため、Anthropic APIキーは不要。
+**本プロジェクトでの用途**: Claude（claude-haiku-4-5）の呼び出しに使用。IAMロールまたは環境変数で認証するため、Anthropic APIキーは不要。
 
-**バージョン**: 利用するモデル: `claude-sonnet-4-6`
+**バージョン**: 利用するモデル: `claude-haiku-4-5`
 
-**選定理由**: AWSアクセスキーを保有しているため。エンタープライズ向けAI連携としてポートフォリオアピールにもなる。
+**BedrockモデルID（実装）**: `us.anthropic.claude-haiku-4-5-20251001-v1:0`（クロスリージョン推論プロファイル）
+
+**選定理由**: App RunnerのIAMロールで認証でき、アクセスキー管理が不要。エンタープライズ向けAI連携としてポートフォリオアピールにもなる。
 
 **関連ドキュメント**: [アーキテクチャ設計書](./architecture.md#bedrock利用要件)
 
@@ -133,12 +135,11 @@
 
 **設定例**:
 ```python
-from anthropic import AnthropicBedrock
+from anthropic import AsyncAnthropicBedrock
 
-client = AnthropicBedrock(
-    aws_access_key=os.environ["AWS_ACCESS_KEY_ID"],
-    aws_secret_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-    aws_region=os.environ["AWS_REGION"],
+# IAMロールまたは環境変数（AWS_ACCESS_KEY_ID等）を自動検出
+client = AsyncAnthropicBedrock(
+    aws_region=os.environ.get("AWS_REGION", "us-east-1"),
 )
 ```
 
@@ -212,7 +213,7 @@ client = AnthropicBedrock(
 
 **関連コンポーネント**: `AgentRunner`, `asyncio.Queue`
 
-**実装箇所**: `src/app/services/orchestrator.py`
+**実装箇所**: `src/app/services/debate_orchestrator.py`
 
 ---
 
@@ -300,12 +301,12 @@ stateDiagram-v2
 |--------------|------|-------------|
 | `turn_start` | ペルソナの発言開始 | `{"type": "turn_start", "speaker": "persona_a", "name": "楽観コンサル"}` |
 | `token` | 発言テキストのストリーム | `{"type": "token", "speaker": "persona_a", "text": "AIへの投資は"}` |
-| `tool_start` | ツール使用開始 | `{"type": "tool_start", "tool": "web_search", "query": "AI投資 ROI"}` |
-| `tool_end` | ツール使用完了 | `{"type": "tool_end", "tool": "web_search"}` |
-| `turn_end` | 発言完了 | `{"type": "turn_end", "speaker": "persona_a"}` |
+| `tool_start` | ツール使用開始 | `{"type": "tool_start", "speaker": "persona_a", "tool": "web_search", "query": "AI投資 ROI"}` |
+| `tool_end` | ツール使用完了 | `{"type": "tool_end", "speaker": "persona_a", "tool": "web_search", "result_summary": "検索結果を取得しました"}` |
+| `turn_end` | 発言完了 | `{"type": "turn_end", "speaker": "persona_a", "content": "AIへの投資は..."}` |
 | `summary_start` | まとめ生成開始 | `{"type": "summary_start"}` |
 | `summary_token` | まとめテキストのストリーム | `{"type": "summary_token", "text": "・ペルソナAの主張:"}` |
-| `complete` | 全議論完了 | `{"type": "complete"}` |
+| `complete` | 全議論完了 | `{"type": "complete", "session_id": "abc123"}` |
 | `error` | エラー発生 | `{"type": "error", "message": "AI応答の取得に失敗しました"}` |
 
 ---
@@ -320,7 +321,7 @@ stateDiagram-v2
 
 **発生条件**: 議論アプリ全体の基底例外。直接は使用せず、サブクラスを使用する。
 
-**実装箇所**: `src/app/models/debate.py`
+**実装箇所**: `src/app/models/errors.py`
 
 ---
 

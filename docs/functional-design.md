@@ -32,7 +32,7 @@ graph TB
 |------|------|----------|
 | 言語 | Python 3.12 | 型安全・async対応・AIライブラリの充実 |
 | Webフレームワーク | FastAPI | 非同期処理・SSE対応・型定義との親和性 |
-| LLM | Claude claude-sonnet-4-6 via AWS Bedrock | アクセスキーあり・tool_use対応・高品質 |
+| LLM | Claude claude-haiku-4-5 via AWS Bedrock | tool_use対応・高速・コスト効率良好 |
 | LLM SDK | anthropic (AnthropicBedrock) | Bedrock対応・tool_use APIが直感的 |
 | Web検索 | Tavily API | LLM向け検索APIとして設計・精度良好 |
 | フロントエンド | HTML / CSS / Vanilla JS | MVPに必要最小限・SSE対応が容易 |
@@ -77,9 +77,9 @@ ToolName = Literal["web_search"]
 
 @dataclass
 class ToolCall:
-    tool_name: ToolName  # 使用したツール名
-    input: dict          # ツールへの入力（例: {"query": "AI投資 ROI 2025"}）
-    output: str          # ツールの出力結果
+    tool_name: ToolName       # 使用したツール名
+    input: dict[str, object]  # ツールへの入力（例: {"query": "AI投資 ROI 2025"}）
+    output: str               # ツールの出力結果
 ```
 
 ---
@@ -93,9 +93,9 @@ Speaker = Literal["persona_a", "persona_b"]
 
 @dataclass
 class DebateTurn:
-    speaker: Speaker        # 発言者
-    content: str            # 発言内容
-    tool_calls: list[ToolCall]  # この発言で使用したツール（空リストの場合もある）
+    speaker: Speaker                              # 発言者
+    content: str                                  # 発言内容
+    tool_calls: list[ToolCall] = field(default_factory=list)  # この発言で使用したツール
 ```
 
 ---
@@ -103,20 +103,20 @@ class DebateTurn:
 ### エンティティ: DebateSession（議論セッション全体）
 
 ```python
-from enum import Enum
+from enum import StrEnum
 
-class DebateStatus(str, Enum):
+class DebateStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     ERROR = "error"
 
 @dataclass
 class DebateSession:
-    session_id: str              # UUID
-    config: DebateConfig         # 議論設定
-    turns: list[DebateTurn]      # 発言履歴
-    summary: str | None          # 最終まとめ（完了時に設定）
-    status: DebateStatus         # 現在の状態
+    session_id: str                              # UUID
+    config: DebateConfig                         # 議論設定
+    turns: list[DebateTurn] = field(default_factory=list)  # 発言履歴
+    summary: str | None = None                   # 最終まとめ（完了時に設定）
+    status: DebateStatus = DebateStatus.RUNNING  # 現在の状態
 ```
 
 ---
@@ -201,8 +201,10 @@ class AgentRunner:
    a. ツール名とinputをイベントキューに送信（画面表示用）
    b. 該当ツールを実行（Web検索等）
    c. 結果をtool_resultとしてClaudeに返す
-   d. 2に戻る（Claudeが通常テキストを返すまで繰り返す）
-3. Claudeが通常テキストを返したら発言完了
+   d. 検索回数が MAX_SEARCHES_PER_TURN（= 2）に達した場合、以降のリクエストでは
+      tools=[] としてツールを無効化し、Claudeに発言を強制完了させる
+   e. 2に戻る（Claudeが通常テキストを返すまで繰り返す）
+3. Claudeが通常テキストを返したら発言完了（token・turn_end イベントを1回送信）
 ```
 
 **依存関係**:
@@ -278,6 +280,9 @@ EventType = Literal[
 // ツール使用完了
 {"type": "tool_end", "speaker": "persona_b", "tool": "web_search", "result_summary": "3件の検索結果を取得"}
 
+// 発言完了（発言内容全文を含む）
+{"type": "turn_end", "speaker": "persona_a", "content": "AIへの投資は今が最大のチャンスです。"}
+
 // 全完了
 {"type": "complete", "session_id": "xxx"}
 ```
@@ -320,8 +325,8 @@ sequenceDiagram
     end
 
     Orch->>Claude: まとめ生成リクエスト
-    Claude-->>Orch: まとめテキスト（ストリーミング）
-    Orch->>API: SSEイベント: summary_token × N回
+    Claude-->>Orch: まとめテキスト（非ストリーミング・1回）
+    Orch->>API: SSEイベント: summary_token（全文・1回）
     Orch->>API: SSEイベント: complete
     API-->>FE: complete イベント
     FE-->>User: 議論完了表示
@@ -334,7 +339,7 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> 設定画面
-    設定画面 --> 議論中: 全項目入力済みで開始ボタン押下
+    設定画面 --> 議論中: テーマ入力済みで開始ボタン押下（ペルソナ省略可）
     議論中 --> 完了画面: complete イベント受信
     議論中 --> エラー画面: error イベント受信
     完了画面 --> 設定画面: もう一度ボタン押下
@@ -372,7 +377,7 @@ stateDiagram-v2
 ```
 
 **エラーレスポンス**:
-- `422 Unprocessable Entity`: 入力値が不正（空フィールド等）
+- `422 Unprocessable Entity`: 入力値が不正（テーマが空等）
 
 ---
 
@@ -459,13 +464,16 @@ data: {"type": "complete"}
 
 | エラー種別 | 処理 | ユーザーへの表示 |
 |-----------|------|-----------------|
-| 入力バリデーションエラー | 議論開始をブロック | 「ペルソナ名・立場・テーマを全て入力してください」 |
+| 入力バリデーションエラー | 議論開始をブロック | 「テーマを入力してください」（ペルソナは省略可・デフォルト補完） |
 | Bedrock API エラー | SSEでerrorイベント送信 | 「AI応答の取得に失敗しました。しばらく後に再試行してください」 |
 | Web検索エラー | 検索をスキップして議論継続 | ツール使用ログに「検索失敗」と表示（議論は止めない） |
 | SSE接続切断 | バックグラウンドタスクをキャンセル | 再接続時にセッション状態を返す |
+| SSEタイムアウト（300秒超過） | errorイベント送信 + SSE接続終了 | 「タイムアウトしました」 |
 | セッションNotFound | 404を返す | 「議論セッションが見つかりません。最初からやり直してください」 |
 
 ### エラークラス定義
+
+実装箇所: `src/app/models/errors.py`
 
 ```python
 class DebateError(Exception):

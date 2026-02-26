@@ -51,7 +51,9 @@ class Persona:
 ### コードフォーマット
 
 - **インデント**: 4スペース
-- **行の長さ**: 最大88文字（ruffのデフォルト）
+- **行の長さ**: 最大88文字
+- **有効化ルール**: `E`（pycodestyle）、`F`（Pyflakes）、`I`（isort）、`N`（pep8-naming）、`UP`（pyupgrade）
+- **除外ルール**: `N802`（日本語テスト関数名 `test_正常なクエリで検索結果を返す` を許容するため）
 - **フォーマッター**: `uv run ruff format .` を使用
 
 ### コメント規約
@@ -208,17 +210,28 @@ class DebateTurn:
 
 ```python
 import os
+import anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ✅ 起動時に存在確認（存在しなければエラーで落とす）
-aws_access_key = os.environ["AWS_ACCESS_KEY_ID"]    # KeyError → 起動失敗
-aws_secret_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-tavily_api_key = os.environ["TAVILY_API_KEY"]
+# ✅ 正しい認証方式: IAMロール（AWS SDKが自動解決）
+# App RunnerなどのIAMロール環境ではリージョンのみ指定
+client = anthropic.AsyncAnthropicBedrock(
+    aws_region=os.environ.get("AWS_REGION", "us-east-1"),
+    # aws_access_key_id / aws_secret_access_key は指定しない
+    # → boto3認証チェーン（IAMロール・環境変数・~/.aws/credentials）が自動解決
+)
+
+# ✅ TAVILY_API_KEY は必須（起動時に存在確認）
+tavily_api_key = os.environ["TAVILY_API_KEY"]    # KeyError → 起動失敗
+
+# ローカル開発時のみ .env に設定（App Runnerなど本番IAMロール環境では不要）
+# AWS_ACCESS_KEY_ID=AKIA...
+# AWS_SECRET_ACCESS_KEY=...
 
 # ❌ ハードコード絶対禁止
-client = AnthropicBedrock(aws_access_key="AKIAXXXXXX")
+client = anthropic.AsyncAnthropicBedrock(aws_access_key_id="AKIAXXXXXX")
 ```
 
 ### プロンプトインジェクション対策
@@ -344,6 +357,8 @@ fix(bedrock): 接続タイムアウト時のエラーハンドリングを追加
 | 手動デモテスト | ブラウザでの完走確認 | 高（リリース前必須） |
 
 ### ユニットテストの書き方（Given-When-Then）
+
+`pyproject.toml` に `asyncio_mode = "auto"` が設定されているため、`@pytest.mark.asyncio` デコレータは不要です。
 
 ```python
 import pytest

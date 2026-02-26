@@ -14,21 +14,23 @@
 | 技術 | バージョン | 用途 | 選定理由 |
 |------|-----------|------|----------|
 | fastapi | >=0.115.0 | WebフレームワークとAPIサーバー | 非同期処理・Pydantic統合・SSE対応 |
-| uvicorn | >=0.30.0 | ASGIサーバー | FastAPIのデフォルト実行環境・高速 |
-| anthropic | >=0.40.0 | LLM呼び出し（AWS Bedrock経由） | AnthropicBedrock clientでBedrock対応・tool_use APIが直感的 |
-| sse-starlette | >=2.0.0 | Server-Sent Events配信 | FastAPIとの統合が容易・軽量 |
-| tavily-python | >=0.3.0 | Web検索ツール実装 | LLM向け設計・JSON形式で検索結果取得 |
+| uvicorn[standard] | >=0.32.0 | ASGIサーバー | FastAPIのデフォルト実行環境・高速 |
+| anthropic[bedrock] | >=0.83.0 | LLM呼び出し（AWS Bedrock経由） | AnthropicBedrock clientでBedrock対応・tool_use APIが直感的 |
+| sse-starlette | >=3.2.0 | Server-Sent Events配信 | FastAPIとの統合が容易・軽量 |
+| tavily-python | >=0.7.21 | Web検索ツール実装 | LLM向け設計・JSON形式で検索結果取得 |
 | pydantic | >=2.0.0 | リクエスト/レスポンスのバリデーション | FastAPIに統合済み・型安全 |
-| python-dotenv | >=1.0.0 | 環境変数の読み込み | .envファイルで認証情報を管理 |
+| python-dotenv | >=1.2.1 | 環境変数の読み込み | .envファイルで認証情報を管理 |
 
 ### 開発ツール
 
 | 技術 | バージョン | 用途 | 選定理由 |
 |------|-----------|------|----------|
 | pytest | >=8.0.0 | テストフレームワーク | Pythonの標準的なテストツール |
-| pytest-asyncio | >=0.23.0 | 非同期テスト | FastAPI/asyncioの非同期コードをテスト |
-| ruff | >=0.4.0 | Lint・フォーマット | 高速・ruff checkとruff formatで一元管理 |
-| mypy | >=1.9.0 | 型チェック | 静的型解析でバグを早期発見 |
+| pytest-asyncio | >=0.24.0 | 非同期テスト | FastAPI/asyncioの非同期コードをテスト |
+| pytest-cov | >=7.0.0 | カバレッジ計測 | カバレッジ目標の達成度を測定 |
+| ruff | >=0.8.0 | Lint・フォーマット | 高速・ruff checkとruff formatで一元管理 |
+| mypy | >=1.13.0 | 型チェック | 静的型解析でバグを早期発見 |
+| pre-commit | >=4.0.0 | Gitフック管理 | コミット前に自動でLint・フォーマットを実行 |
 
 ---
 
@@ -60,8 +62,8 @@
 - **禁止される操作**: サービスレイヤーへの直接アクセス
 
 #### APIレイヤー
-- **責務**: HTTPリクエストの受付・バリデーション、SSEストリームの管理
-- **許可される操作**: サービスレイヤーの呼び出し、SSEイベントの配信
+- **責務**: HTTPリクエストの受付・バリデーション、SSEイベントストリームの管理
+- **許可される操作**: サービスレイヤーの呼び出し、SSEイベントの配信（各発言は全文を1イベントとして送信する非ストリーミング方式）
 - **禁止される操作**: ビジネスロジックの実装、外部APIの直接呼び出し
 
 #### サービスレイヤー
@@ -108,7 +110,7 @@ event_queues: dict[str, asyncio.Queue] = {}
 | 操作 | 目標時間 | 測定方法 |
 |------|---------|---------|
 | トップページ表示 | 2秒以内 | ブラウザのDevTools Network |
-| 議論開始（初回トークン） | 3秒以内 | SSEで最初のtokenイベントが届くまで |
+| 議論開始（初回tokenイベント） | 3秒以内 | SSEで最初のtokenイベントが届くまで（発言全文を1イベントとして送信） |
 | Web検索ツール実行 | 10秒以内 | tool_startからtool_endイベントまで |
 | 1ターンの発言完了 | 30秒以内 | turn_startからturn_endイベントまで |
 
@@ -127,6 +129,21 @@ event_queues: dict[str, asyncio.Queue] = {}
 
 すべての認証情報は環境変数で管理し、ソースコードにハードコードしない。
 
+AWS認証は2つの方式に対応している:
+
+**方式1: IAMロール（本番推奨）**
+
+AWS App RunnerなどIAMロールが自動適用される環境では、アクセスキーの設定は不要。
+`AsyncAnthropicBedrock` はAWS SDKの認証チェーンを自動的に使用する。
+
+```bash
+# .env（Gitに含めない・.gitignoreに追加）
+AWS_REGION=us-east-1
+TAVILY_API_KEY=xxxxx
+```
+
+**方式2: アクセスキー（ローカル開発時）**
+
 ```bash
 # .env（Gitに含めない・.gitignoreに追加）
 AWS_ACCESS_KEY_ID=xxxxx
@@ -136,12 +153,12 @@ TAVILY_API_KEY=xxxxx
 ```
 
 ```python
-# 読み込み方法
-from dotenv import load_dotenv
-import os
+# Bedrockクライアントの初期化（リージョンのみ指定、認証はAWS SDKに委譲）
+import anthropic, os
 
-load_dotenv()
-aws_access_key = os.environ["AWS_ACCESS_KEY_ID"]  # 存在しなければ起動時にエラー
+client = anthropic.AsyncAnthropicBedrock(
+    aws_region=os.environ.get("AWS_REGION", "us-east-1"),
+)
 ```
 
 ### 入力検証
@@ -176,11 +193,20 @@ class DebateStartRequest(BaseModel):
 - シングルプロセス → 水平スケールなし
 - APIキー1セット → コスト管理のため同時実行数を制限
 
+### デプロイ構成
+
+| 環境 | 方式 | 設定ファイル |
+|------|------|-------------|
+| ローカル開発 | uvicorn --reload | - |
+| 本番（AWS） | AWS App Runner | `apprunner.yaml` |
+
+- コンテナイメージは `Dockerfile` でビルドしECRにプッシュ（`scripts/deploy-ecr.ps1`）
+- AWS App RunnerがTLS終端を自動処理するためHTTPS対応は追加設定不要
+
 ### Post-MVPの拡張方針
 
 - セッション永続化: Redis or SQLiteに移行
 - 同時実行制御: セマフォによるBedrock API呼び出し数の制限
-- デプロイ: Railway / Render などのPaaS → 必要に応じてECS/Cloud Runへ
 
 ---
 
@@ -220,15 +246,16 @@ uv run pytest -v --tb=short  # 詳細表示
 ### Bedrock利用要件
 
 ```
-AWSリージョン: us-east-1 または ap-northeast-1
-必要なモデルアクセス: claude-sonnet-4-6（Bedrockコンソールで有効化が必要）
+AWSリージョン: us-east-1（クロスリージョン推論プロファイル使用のため）
+必要なモデルアクセス: claude-haiku-4-5（Bedrockコンソールで有効化が必要）
+使用するモデルID: us.anthropic.claude-haiku-4-5-20251001-v1:0（クロスリージョン推論プロファイル）
 IAMポリシー:
   - bedrock:InvokeModel
   - bedrock:InvokeModelWithResponseStream
 ```
 
 ### コスト管理（デモ用途）
-- Claude claude-sonnet-4-6 の入出力トークン数はデモ用途のため都度管理しない
+- Claude claude-haiku-4-5 の入出力トークン数はデモ用途のため都度管理しない
 - Web検索APIはTavily無料枠（月1,000リクエスト）で十分
 
 ---
@@ -239,21 +266,23 @@ IAMポリシー:
 # pyproject.toml の dependencies セクション
 [project]
 dependencies = [
+    "anthropic[bedrock]>=0.83.0",
     "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "anthropic>=0.40.0",
-    "sse-starlette>=2.0.0",
-    "tavily-python>=0.3.0",
-    "python-dotenv>=1.0.0",
+    "python-dotenv>=1.2.1",
+    "sse-starlette>=3.2.0",
+    "tavily-python>=0.7.21",
+    "uvicorn[standard]>=0.32.0",
 ]
 
-[tool.uv.dev-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest-asyncio>=0.24.0",
     "httpx>=0.27.0",
-    "ruff>=0.4.0",
-    "mypy>=1.9.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+    "pytest-cov>=7.0.0",
 ]
 ```
 
