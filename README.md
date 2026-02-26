@@ -19,7 +19,7 @@
 | 分類 | 技術 |
 |------|------|
 | バックエンド | Python 3.12 + FastAPI |
-| LLM | claude-sonnet-4-6 (AWS Bedrock) |
+| LLM | claude-haiku-4-5 (AWS Bedrock) |
 | Web検索 | Tavily API |
 | フロントエンド | Vanilla HTML/CSS/JS |
 | リアルタイム通信 | Server-Sent Events |
@@ -31,7 +31,7 @@
 - Docker（Dev Container使用時）
 - AWS アカウント（Bedrock の `bedrock:InvokeModel` 権限付き IAM ユーザーまたはロール）
 - [Tavily](https://tavily.com) の API キー
-- AWS Bedrock で `claude-sonnet-4-6` のモデルアクセスを有効化済み（[AWS コンソール > Bedrock > モデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) から申請）
+- AWS Bedrock で `claude-haiku-4-5` のモデルアクセスを有効化済み（[AWS コンソール > Bedrock > モデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) から申請）
 
 ---
 
@@ -157,6 +157,13 @@ aws ecr create-repository --repository-name ai-debate --region us-east-1
 ```
 
 **2. Docker ビルド & ECR へプッシュ**
+
+Windows PowerShell の場合は付属スクリプトを使用できます:
+```powershell
+.\scripts\deploy-ecr.ps1
+```
+
+手動で実行する場合 (bash):
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URI="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/ai-debate"
@@ -190,7 +197,7 @@ docker push "${ECR_URI}:latest"
 | 項目 | 設定値 |
 |------|-------|
 | インスタンスロール | 手順1で作成した IAM ロール |
-| 環境変数 | `TAVILY_API_KEY=<your-key>` を追加 |
+| 環境変数 | `AWS_REGION=us-east-1`、`TAVILY_API_KEY=<your-key>` を追加 |
 | **リクエストタイムアウト** | **`3600` 秒**（SSE の長時間接続に必須） |
 
 ---

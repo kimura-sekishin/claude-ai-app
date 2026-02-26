@@ -7,6 +7,7 @@
 - MVP実装済み: ペルソナ設定・往復議論（SSEストリーミング）・Web検索（Tavily）・最終まとめ出力
 - 永続ドキュメント（`docs/`）作成済み（PRD・機能設計・アーキテクチャ等6ファイル）
 - Claude Code スキル群（ステアリング・add-feature等）利用可能
+- デプロイ設定済み: `Dockerfile`・`apprunner.yaml`（AWS App Runner用）・`scripts/deploy-ecr.ps1`（ECRプッシュ用）
 
 ### 主要実装ファイル
 
@@ -30,7 +31,10 @@
 
 ### 環境変数
 
-`.env.example` を `.env` にコピーして `AWS_ACCESS_KEY_ID`・`AWS_SECRET_ACCESS_KEY`・`AWS_REGION`・`TAVILY_API_KEY` を設定する。
+`.env.example` を `.env` にコピーして設定する。
+
+- `AWS_REGION`・`TAVILY_API_KEY` は常に必要
+- `AWS_ACCESS_KEY_ID`・`AWS_SECRET_ACCESS_KEY` はローカル開発時のみ必要（App RunnerなどIAMロール環境では不要）
 
 ### よく使うコマンド
 
