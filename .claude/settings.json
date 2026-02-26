@@ -17,7 +17,11 @@
       "Bash(uv run pytest tests/integration/test_debate_api.py -v --tb=long)",
       "Bash(uv run pytest --cov=src/app/routers --cov-report=term-missing)",
       "Bash(echo \"exit: $?\")",
-      "Bash(git add src/app/models/debate.py src/app/routers/debate.py src/app/static/index.html tests/integration/test_debate_api.py tests/unit/routers/)"
+      "Bash(git add src/app/models/debate.py src/app/routers/debate.py src/app/static/index.html tests/integration/test_debate_api.py tests/unit/routers/)",
+      "Bash(uv run ruff check src/app/services/agent_runner.py tests/unit/services/test_agent_runner.py)",
+      "Bash(uv run mypy src/app/services/agent_runner.py)",
+      "Bash(uv run pytest tests/unit/services/test_agent_runner.py -v)",
+      "Bash(uv run pytest tests/unit/services/test_agent_runner.py --cov=src/app/services/agent_runner --cov-report=term-missing)"
     ],
     "deny": [],
     "ask": [],

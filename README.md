@@ -64,11 +64,13 @@ cp .env.example .env
 `.env` を編集して認証情報を入力してください：
 
 ```
-AWS_ACCESS_KEY_ID=<your-key>
-AWS_SECRET_ACCESS_KEY=<your-secret>
+AWS_ACCESS_KEY_ID=<your-key>      # ローカル開発時のみ必要（IAMロール使用時は不要）
+AWS_SECRET_ACCESS_KEY=<your-secret>  # ローカル開発時のみ必要（IAMロール使用時は不要）
 AWS_REGION=us-east-1
 TAVILY_API_KEY=<your-key>    # https://app.tavily.com でサインアップして取得
 ```
+
+> **AWS認証について**: App Runner などIAMロールを持つ環境では `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` は不要です。AWSのデフォルト認証チェーン（環境変数 → IAMロール → AWSプロファイル）が自動的に使用されます。
 
 ### 3. 開発サーバーを起動
 

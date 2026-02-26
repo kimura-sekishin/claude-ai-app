@@ -90,8 +90,6 @@ class AgentRunner:
 
     def __init__(self) -> None:
         self._client = anthropic.AsyncAnthropicBedrock(
-            aws_access_key=os.environ["AWS_ACCESS_KEY_ID"],
-            aws_secret_key=os.environ["AWS_SECRET_ACCESS_KEY"],
             aws_region=os.environ.get("AWS_REGION", "us-east-1"),
         )
         self._search_tool = WebSearchTool()

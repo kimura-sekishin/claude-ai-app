@@ -38,8 +38,6 @@ def _make_response(stop_reason: str, content: list[Any]) -> MagicMock:
 @pytest.fixture
 def agent_runner(monkeypatch: pytest.MonkeyPatch) -> AgentRunner:
     """環境変数をセットし、外部クライアントをモックしたAgentRunnerを返す。"""
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-key")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     monkeypatch.setenv("TAVILY_API_KEY", "test-tavily-key")
 
