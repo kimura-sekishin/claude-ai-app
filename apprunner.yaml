@@ -1,0 +1,22 @@
+# AWS App Runner ソースベースデプロイ設定
+# GitHub リポジトリを App Runner に連携した際に自動読み込みされます。
+# ECR コンテナを使ったデプロイ手順は README を参照してください。
+
+version: 1.0
+runtime: PYTHON_3
+build:
+  commands:
+    pre-build:
+      - pip install uv
+      - uv sync --frozen --no-dev
+run:
+  command: uv run uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000
+  network:
+    port: 8000
+    env: PORT
+  env:
+    - name: AWS_REGION
+      value: us-east-1
+# TAVILY_API_KEY は App Runner コンソール > 環境変数 で設定してください（機密情報）
+# リクエストタイムアウトは App Runner コンソール > サービス設定 > タイムアウト で
+# 3600 秒に設定してください（SSE の長時間接続に必須）

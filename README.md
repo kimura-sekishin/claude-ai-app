@@ -112,6 +112,87 @@ src/app/
 
 ---
 
+## デプロイ (AWS App Runner)
+
+### 前提条件
+
+- AWS CLI がセットアップ済み
+- AWS Bedrock で `claude-haiku-4-5-20251001` のモデルアクセスを有効化済み
+
+### 1. IAM ロールの作成
+
+App Runner から Bedrock を呼び出すためのインスタンスロールを作成します。
+
+**信頼ポリシー** (App Runner サービスプリンシパルを信頼):
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Service": "tasks.apprunner.amazonaws.com"},
+    "Action": "sts:AssumeRole"
+  }]
+}
+```
+
+**アタッチするポリシー** (Bedrock へのモデル呼び出し権限):
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "bedrock:InvokeModel",
+    "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude*"
+  }]
+}
+```
+
+### オプション A: コンテナ (ECR) デプロイ
+
+**1. ECR リポジトリを作成**
+```bash
+aws ecr create-repository --repository-name ai-debate --region us-east-1
+```
+
+**2. Docker ビルド & ECR へプッシュ**
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_URI="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/ai-debate"
+
+docker build -t ai-debate .
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com"
+docker tag ai-debate:latest "${ECR_URI}:latest"
+docker push "${ECR_URI}:latest"
+```
+
+**3. App Runner サービスを作成 ([コンソール](https://console.aws.amazon.com/apprunner))**
+
+| 項目 | 設定値 |
+|------|-------|
+| ソース | Amazon ECR（上記でプッシュしたイメージ） |
+| ポート | `8000` |
+| インスタンスロール | 手順1で作成した IAM ロール |
+| 環境変数 | `AWS_REGION=us-east-1`、`TAVILY_API_KEY=<your-key>` |
+| **リクエストタイムアウト** | **`3600` 秒**（SSE の長時間接続に必須） |
+
+> `AWS_ACCESS_KEY_ID` と `AWS_SECRET_ACCESS_KEY` はインスタンスロールで認証するため設定不要です。
+
+### オプション B: GitHub ソースデプロイ (apprunner.yaml)
+
+コンテナビルド不要で、GitHub リポジトリから直接デプロイできます。
+[App Runner コンソール](https://console.aws.amazon.com/apprunner)で GitHub リポジトリを連携すると `apprunner.yaml` が自動読み込みされます。
+
+コンソールで以下を追加設定してください:
+
+| 項目 | 設定値 |
+|------|-------|
+| インスタンスロール | 手順1で作成した IAM ロール |
+| 環境変数 | `TAVILY_API_KEY=<your-key>` を追加 |
+| **リクエストタイムアウト** | **`3600` 秒**（SSE の長時間接続に必須） |
+
+---
+
 ## ドキュメント
 
 | ファイル | 内容 |
