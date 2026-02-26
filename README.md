@@ -144,10 +144,15 @@ App Runner から Bedrock を呼び出すためのインスタンスロールを
   "Statement": [{
     "Effect": "Allow",
     "Action": "bedrock:InvokeModel",
-    "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude*"
+    "Resource": [
+      "arn:aws:bedrock:*::foundation-model/anthropic.claude*",
+      "arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude*"
+    ]
   }]
 }
 ```
+
+> **注意**: モデルID `us.anthropic.claude-*` はクロスリージョン推論プロファイルを使用するため、`inference-profile` の ARN も許可が必要です。
 
 ### オプション A: コンテナ (ECR) デプロイ
 
