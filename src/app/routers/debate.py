@@ -50,6 +50,7 @@ async def start_debate(request: DebateStartRequest) -> DebateStartResponse:
         persona_a=_to_persona(request.persona_a, DEFAULT_PERSONA_A),
         persona_b=_to_persona(request.persona_b, DEFAULT_PERSONA_B),
         theme=request.theme,
+        max_turns=request.max_turns,
     )
     session = DebateSession(
         session_id=session_id,

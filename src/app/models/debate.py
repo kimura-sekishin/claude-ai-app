@@ -59,7 +59,7 @@ class DebateConfig:
     persona_a: Persona
     persona_b: Persona
     theme: str
-    max_turns: int = 4
+    max_turns: int = 2
 
 
 @dataclass
@@ -97,6 +97,7 @@ class DebateStartRequest(BaseModel):
     persona_a: PersonaInput = Field(default_factory=PersonaInput)
     persona_b: PersonaInput = Field(default_factory=PersonaInput)
     theme: str = Field(min_length=1, max_length=200)
+    max_turns: int = Field(default=2, ge=1, le=6)
 
 
 class DebateStartResponse(BaseModel):

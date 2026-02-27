@@ -85,7 +85,8 @@
     }
 
     .form-group input,
-    .form-group textarea {
+    .form-group textarea,
+    .form-group select {
       width: 100%;
       padding: 10px 14px;
       border: 1.5px solid #e2e8f0;
@@ -99,7 +100,8 @@
     }
 
     .form-group input:focus,
-    .form-group textarea:focus {
+    .form-group textarea:focus,
+    .form-group select:focus {
       outline: none;
       border-color: #3B82F6;
       background: #fff;
@@ -371,6 +373,17 @@
           required
         />
       </div>
+      <div class="form-group">
+        <label for="max-turns">ターン数（1ターン = A・Bそれぞれ1回発言）</label>
+        <select id="max-turns">
+          <option value="1">1ターン（短め・約2発言）</option>
+          <option value="2" selected>2ターン（標準・約4発言）</option>
+          <option value="3">3ターン（約6発言）</option>
+          <option value="4">4ターン（約8発言）</option>
+          <option value="5">5ターン（約10発言）</option>
+          <option value="6">6ターン（長め・約12発言）</option>
+        </select>
+      </div>
     </div>
 
     <!-- ペルソナ（2カラム横並び） -->
@@ -502,6 +515,7 @@
         description: document.getElementById('persona-b-description').value.trim(),
       },
       theme: document.getElementById('theme').value.trim(),
+      max_turns: parseInt(document.getElementById('max-turns').value, 10),
     };
 
     startBtn.disabled = true;

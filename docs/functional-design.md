@@ -63,7 +63,7 @@ class DebateConfig:
     persona_a: Persona  # ペルソナA
     persona_b: Persona  # ペルソナB
     theme: str          # 議論テーマ（例: "AIベンチャーへの投資はすべきか"）
-    max_turns: int = 4  # 最大ターン数（1ターン = A発言 + B発言）
+    max_turns: int = 2  # ターン数（1ターン = A発言 + B発言）。APIから1〜6で指定可能
 ```
 
 ---
@@ -365,9 +365,12 @@ stateDiagram-v2
     "name": "慎重なリスクアナリスト",
     "description": "リスク管理を重視。データに基づいて反論する。"
   },
-  "theme": "AIベンチャーへの投資はすべきか"
+  "theme": "AIベンチャーへの投資はすべきか",
+  "max_turns": 2
 }
 ```
+
+`max_turns`: 省略可（デフォルト: 2）。範囲: 1〜6。
 
 **レスポンス**:
 ```json
@@ -377,7 +380,7 @@ stateDiagram-v2
 ```
 
 **エラーレスポンス**:
-- `422 Unprocessable Entity`: 入力値が不正（テーマが空等）
+- `422 Unprocessable Entity`: 入力値が不正（テーマが空、`max_turns` が範囲外等）
 
 ---
 

@@ -154,3 +154,66 @@ class TestExportDebate:
 
         # Then
         assert response.status_code == 404
+
+
+class TestMaxTurns:
+    async def test_正常系_max_turns_1で200が返る(self, client: AsyncClient) -> None:
+        # Given
+        request = {**VALID_REQUEST, "max_turns": 1}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then
+        assert response.status_code == 200
+        session_id = response.json()["session_id"]
+        session = session_store.get_session(session_id)
+        assert session.config.max_turns == 1
+
+    async def test_正常系_max_turns_6で200が返る(self, client: AsyncClient) -> None:
+        # Given
+        request = {**VALID_REQUEST, "max_turns": 6}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then
+        assert response.status_code == 200
+        session_id = response.json()["session_id"]
+        session = session_store.get_session(session_id)
+        assert session.config.max_turns == 6
+
+    async def test_正常系_max_turns省略でデフォルト2が適用される(
+        self, client: AsyncClient
+    ) -> None:
+        # Given: max_turns を指定しない
+        request = {"theme": "AIは社会を豊かにするか"}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then
+        assert response.status_code == 200
+        session_id = response.json()["session_id"]
+        session = session_store.get_session(session_id)
+        assert session.config.max_turns == 2
+
+    async def test_異常系_max_turns_0で422(self, client: AsyncClient) -> None:
+        # Given
+        request = {**VALID_REQUEST, "max_turns": 0}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then
+        assert response.status_code == 422
+
+    async def test_異常系_max_turns_7で422(self, client: AsyncClient) -> None:
+        # Given
+        request = {**VALID_REQUEST, "max_turns": 7}
+
+        # When
+        response = await client.post("/api/debate/start", json=request)
+
+        # Then
+        assert response.status_code == 422
