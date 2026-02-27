@@ -35,7 +35,7 @@
 
     /* ===== 設定画面 ===== */
     #config-view {
-      max-width: 600px;
+      max-width: 760px;
       margin: 0 auto;
       padding: 32px 16px;
     }
@@ -110,9 +110,33 @@
     }
 
     .theme-section h2 {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 12px; /* .section-card h2 の 16px を上書き */
+    }
+
+    /* ペルソナ2カラムグリッド */
+    .persona-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .persona-grid .section-card {
+      margin-bottom: 0;
+    }
+
+    /* デフォルト説明文 */
+    .persona-hint {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+
+    /* モバイル対応: 640px以下で縦積み */
+    @media (max-width: 640px) {
+      .persona-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     #start-btn {
@@ -319,57 +343,7 @@
   </header>
 
   <form id="config-form" novalidate>
-    <!-- ペルソナ A -->
-    <div class="section-card">
-      <h2>
-        <span class="badge badge-a">A</span>
-        ペルソナ A <small style="font-weight:normal;font-size:0.75rem;opacity:0.7;">（省略可）</small>
-      </h2>
-      <div class="form-group">
-        <label for="persona-a-name">名前</label>
-        <input
-          type="text"
-          id="persona-a-name"
-          placeholder="省略時: 賛成派"
-          maxlength="50"
-        />
-      </div>
-      <div class="form-group">
-        <label for="persona-a-description">立場・性格</label>
-        <textarea
-          id="persona-a-description"
-          placeholder="省略時: 議論テーマに対して賛成・肯定的な立場から論理的に主張する"
-          maxlength="200"
-        ></textarea>
-      </div>
-    </div>
-
-    <!-- ペルソナ B -->
-    <div class="section-card">
-      <h2>
-        <span class="badge badge-b">B</span>
-        ペルソナ B <small style="font-weight:normal;font-size:0.75rem;opacity:0.7;">（省略可）</small>
-      </h2>
-      <div class="form-group">
-        <label for="persona-b-name">名前</label>
-        <input
-          type="text"
-          id="persona-b-name"
-          placeholder="省略時: 反対派"
-          maxlength="50"
-        />
-      </div>
-      <div class="form-group">
-        <label for="persona-b-description">立場・性格</label>
-        <textarea
-          id="persona-b-description"
-          placeholder="省略時: 議論テーマに対して反対・否定的な立場から論理的に主張する"
-          maxlength="200"
-        ></textarea>
-      </div>
-    </div>
-
-    <!-- テーマ -->
+    <!-- テーマ（最上部） -->
     <div class="section-card theme-section">
       <h2>議論テーマ</h2>
       <div class="form-group">
@@ -383,6 +357,61 @@
         />
       </div>
     </div>
+
+    <!-- ペルソナ（2カラム横並び） -->
+    <div class="persona-grid">
+      <!-- ペルソナ A -->
+      <div class="section-card">
+        <h2>
+          <span class="badge badge-a">A</span>
+          ペルソナ A <small style="font-weight:normal;font-size:0.75rem;opacity:0.7;">（省略可）</small>
+        </h2>
+        <div class="form-group">
+          <label for="persona-a-name">名前</label>
+          <input
+            type="text"
+            id="persona-a-name"
+            placeholder="省略時: 賛成派"
+            maxlength="50"
+          />
+        </div>
+        <div class="form-group">
+          <label for="persona-a-description">立場・性格</label>
+          <textarea
+            id="persona-a-description"
+            placeholder="省略時: 議論テーマに対して賛成・肯定的な立場から論理的に主張する"
+            maxlength="200"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- ペルソナ B -->
+      <div class="section-card">
+        <h2>
+          <span class="badge badge-b">B</span>
+          ペルソナ B <small style="font-weight:normal;font-size:0.75rem;opacity:0.7;">（省略可）</small>
+        </h2>
+        <div class="form-group">
+          <label for="persona-b-name">名前</label>
+          <input
+            type="text"
+            id="persona-b-name"
+            placeholder="省略時: 反対派"
+            maxlength="50"
+          />
+        </div>
+        <div class="form-group">
+          <label for="persona-b-description">立場・性格</label>
+          <textarea
+            id="persona-b-description"
+            placeholder="省略時: 議論テーマに対して反対・否定的な立場から論理的に主張する"
+            maxlength="200"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <p class="persona-hint">ペルソナ名・立場を空欄のままでも、デフォルトの「賛成派」「反対派」として議論を開始できます。</p>
 
     <div id="config-error" hidden></div>
     <button type="submit" id="start-btn" disabled>議論スタート</button>
