@@ -381,6 +381,43 @@ stateDiagram-v2
 
 ---
 
+### GET /api/debate/{session_id}/export
+
+議論セッションをMarkdownファイルとしてダウンロードする。
+
+**レスポンス**: `text/markdown; charset=utf-8`（ファイルダウンロード）
+
+```markdown
+# 議論: {theme}
+
+## ペルソナ設定
+
+### ペルソナ A: {persona_a.name}
+{persona_a.description}
+
+### ペルソナ B: {persona_b.name}
+{persona_b.description}
+
+---
+
+## 議論の内容
+
+### {speaker_name}
+
+{content}
+
+---
+
+## まとめ
+
+{summary}
+```
+
+**エラーレスポンス**:
+- `404 Not Found`: session_idが存在しない
+
+---
+
 ### GET /api/debate/{session_id}/stream
 
 SSEでリアルタイムに議論イベントを配信する。

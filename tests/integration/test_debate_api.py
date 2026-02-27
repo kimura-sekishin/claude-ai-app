@@ -117,3 +117,40 @@ class TestStreamDebate:
 
         # Then
         assert response.status_code == 404
+
+
+class TestExportDebate:
+    async def test_正常系_Markdownファイルが返される(self, client: AsyncClient) -> None:
+        # Given: 有効なセッションを作成
+        start_response = await client.post("/api/debate/start", json=VALID_REQUEST)
+        session_id = start_response.json()["session_id"]
+
+        # When
+        response = await client.get(f"/api/debate/{session_id}/export")
+
+        # Then
+        assert response.status_code == 200
+        assert "text/markdown" in response.headers["content-type"]
+        assert "attachment" in response.headers["content-disposition"]
+        content = response.text
+        assert "# 議論:" in content
+        assert "## ペルソナ設定" in content
+
+    async def test_正常系_Markdownにテーマが含まれる(self, client: AsyncClient) -> None:
+        # Given
+        request = {**VALID_REQUEST, "theme": "AIは人類を幸福にするか"}
+        start_response = await client.post("/api/debate/start", json=request)
+        session_id = start_response.json()["session_id"]
+
+        # When
+        response = await client.get(f"/api/debate/{session_id}/export")
+
+        # Then
+        assert "AIは人類を幸福にするか" in response.text
+
+    async def test_異常系_存在しないsession_idで404(self, client: AsyncClient) -> None:
+        # When
+        response = await client.get("/api/debate/non-existent-id/export")
+
+        # Then
+        assert response.status_code == 404

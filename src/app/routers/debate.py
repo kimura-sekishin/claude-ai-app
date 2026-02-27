@@ -4,6 +4,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from sse_starlette.sse import EventSourceResponse
 
 from app.infra import session_store
@@ -19,6 +20,7 @@ from app.models.debate import (
     PersonaInput,
 )
 from app.models.errors import SessionNotFoundError
+from app.services.debate_formatter import format_debate_as_markdown
 from app.services.debate_orchestrator import DebateOrchestrator
 
 router = APIRouter(prefix="/api/debate", tags=["debate"])
@@ -90,3 +92,21 @@ async def stream_debate(session_id: str) -> EventSourceResponse:
                 break
 
     return EventSourceResponse(event_generator())
+
+
+@router.get("/{session_id}/export")
+async def export_debate(session_id: str) -> Response:
+    """議論セッションをMarkdownファイルとしてダウンロードする。"""
+    try:
+        session = session_store.get_session(session_id)
+    except SessionNotFoundError:
+        raise HTTPException(status_code=404, detail="セッションが見つかりません")
+
+    content = format_debate_as_markdown(session)
+    filename = f"debate-{session_id[:8]}.md"
+
+    return Response(
+        content=content.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

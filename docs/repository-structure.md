@@ -12,7 +12,8 @@ claude-ai-app/                    # プロジェクトルート
 │       │   └── debate.py         # 議論セッション関連エンドポイント
 │       ├── services/             # サービスレイヤー（ビジネスロジック）
 │       │   ├── debate_orchestrator.py # DebateOrchestrator（議論制御）
-│       │   └── agent_runner.py        # AgentRunner（1エージェント実行）
+│       │   ├── agent_runner.py        # AgentRunner（1エージェント実行）
+│       │   └── debate_formatter.py    # format_debate_as_markdown（Markdown変換）
 │       ├── infra/                # インフラレイヤー（外部依存）
 │       │   ├── web_search.py     # Tavily Web検索ツール
 │       │   └── session_store.py  # セッション管理
@@ -83,7 +84,7 @@ claude-ai-app/                    # プロジェクトルート
 
 ```
 routers/
-└── debate.py        # POST /api/debate/start, GET /api/debate/{id}/stream
+└── debate.py        # POST /api/debate/start, GET /api/debate/{id}/stream, GET /api/debate/{id}/export
 ```
 
 ---
@@ -95,6 +96,7 @@ routers/
 **配置ファイル**:
 - `debate_orchestrator.py`: `DebateOrchestrator` クラス（ターン管理・まとめ生成）
 - `agent_runner.py`: `AgentRunner` クラス（tool_useループ・1ターン発言生成）
+- `debate_formatter.py`: `format_debate_as_markdown()` 関数（議論セッション→Markdown変換）
 
 **命名規則**:
 - ファイル名: 役割を表す snake_case + `_runner` / `_orchestrator` 等
@@ -107,7 +109,8 @@ routers/
 ```
 services/
 ├── debate_orchestrator.py  # DebateOrchestrator: 議論全体の制御
-└── agent_runner.py         # AgentRunner: 1エージェントの発言生成
+├── agent_runner.py         # AgentRunner: 1エージェントの発言生成
+└── debate_formatter.py     # format_debate_as_markdown(): Markdown変換
 ```
 
 ---

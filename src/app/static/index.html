@@ -302,6 +302,7 @@
       padding: 14px 16px;
       display: flex;
       justify-content: center;
+      gap: 12px;
     }
 
     #restart-btn {
@@ -317,6 +318,20 @@
     }
 
     #restart-btn:hover { background: #334155; }
+
+    #export-btn {
+      padding: 10px 24px;
+      background: transparent;
+      color: #1e293b;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    #export-btn:hover { border-color: #94a3b8; background: #f1f5f9; }
 
     /* ===== 設定画面エラー表示 ===== */
     #config-error {
@@ -435,6 +450,7 @@
   </div>
 
   <div class="debate-footer">
+    <button id="export-btn" hidden>⬇ Markdownで保存</button>
     <button id="restart-btn" hidden>もう一度</button>
   </div>
 </div>
@@ -454,14 +470,16 @@
   const configError   = document.getElementById('config-error');
   const debateThemeText = document.getElementById('debate-theme-text');
   const restartBtn    = document.getElementById('restart-btn');
+  const exportBtn     = document.getElementById('export-btn');
 
   // フォームフィールド（themeのみ必須）
   const themeField = document.getElementById('theme');
 
   // ===== 状態 =====
-  let currentSource = null;   // EventSource
-  let currentBubble = null;   // 現在構築中の発言バブル要素
-  let currentToolEl = null;   // 現在のツールインジケーター要素
+  let currentSource = null;     // EventSource
+  let currentBubble = null;     // 現在構築中の発言バブル要素
+  let currentToolEl = null;     // 現在のツールインジケーター要素
+  let currentSessionId = null;  // 現在の議論セッションID
 
   // ===== バリデーション（テーマが入力されたらボタン有効化） =====
   function updateStartBtn() {
@@ -515,6 +533,7 @@
     }
 
     const { session_id } = await res.json();
+    currentSessionId = session_id;
 
     // 議論画面に切り替え
     showDebateView(config.theme);
@@ -663,6 +682,7 @@
       currentSource.close();
       currentSource = null;
     }
+    exportBtn.hidden = false;
     restartBtn.hidden = false;
     restartBtn.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
@@ -694,6 +714,8 @@
     debateView.hidden = true;
     configView.hidden = false;
     startBtn.textContent = '議論スタート';
+    exportBtn.hidden = true;
+    currentSessionId = null;
     updateStartBtn();
   }
 
@@ -702,6 +724,28 @@
     errorBanner.style.display = 'block';
     errorBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // ===== Markdownダウンロード =====
+  async function downloadMarkdown() {
+    if (!currentSessionId) return;
+    try {
+      const response = await fetch(`/api/debate/${currentSessionId}/export`);
+      if (!response.ok) throw new Error(`サーバーエラー (${response.status})`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `debate-${currentSessionId.slice(0, 8)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showError('ダウンロードに失敗しました: ' + (err.message || 'エラーが発生しました'));
+    }
+  }
+
+  exportBtn.addEventListener('click', downloadMarkdown);
 
   // ===== 「もう一度」ボタン =====
   restartBtn.addEventListener('click', () => {
