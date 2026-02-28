@@ -2,7 +2,7 @@
 
 2つのAIペルソナがリアルタイムでWeb検索を使いながら議論するWebアプリです。
 
-本リポジトリは[「実践Claude Code入門 - 現場で活用するためのAIコーディングの思考法」](https://github.com/GenerativeAgents/claude-code-book)（技術評論社）のサンプルコードです。スペック駆動開発の実践例として実装されています。
+本リポジトリは[「実践Claude Code入門 - 現場で活用するためのAIコーディングの思考法」](https://github.com/GenerativeAgents/claude-code-book)（技術評論社）のスペック駆動開発をPython版にアレンジし、その実践例として実装されています。
 
 ---
 
@@ -217,5 +217,3 @@ docker push "${ECR_URI}:latest"
 | [docs/repository-structure.md](docs/repository-structure.md) | リポジトリ構造定義書 |
 | [docs/development-guidelines.md](docs/development-guidelines.md) | 開発ガイドライン |
 | [docs/glossary.md](docs/glossary.md) | ユビキタス言語定義（用語集） |
-
-書籍・コードに関するご質問は [GenerativeAgents/claude-code-book](https://github.com/GenerativeAgents/claude-code-book) のイシューへ。
