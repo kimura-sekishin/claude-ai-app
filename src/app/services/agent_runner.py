@@ -76,7 +76,9 @@ def _build_messages(
         role = "assistant" if turn.speaker == current_speaker else "user"
         messages.append({"role": role, "content": turn.content})
 
-    # 最後が "assistant" の場合は続きを促すユーザーメッセージが必要
+    # 最後が "assistant" の場合は続きを促すユーザーメッセージが必要。
+    # これは同一話者の2ターン目以降にのみ発動する。
+    # （前ターンが current_speaker の発言 → role="assistant" として変換されるため）
     if messages and messages[-1]["role"] == "assistant":
         messages.append(
             {"role": "user", "content": "続けて、あなたの主張を述べてください。"}
@@ -88,11 +90,15 @@ def _build_messages(
 class AgentRunner:
     """1ペルソナの1ターン発言を生成するエージェント。"""
 
-    def __init__(self) -> None:
-        self._client = anthropic.AsyncAnthropicBedrock(
+    def __init__(
+        self,
+        bedrock_client: anthropic.AsyncAnthropicBedrock | None = None,
+        search_tool: WebSearchTool | None = None,
+    ) -> None:
+        self._client = bedrock_client or anthropic.AsyncAnthropicBedrock(
             aws_region=os.environ.get("AWS_REGION", "us-east-1"),
         )
-        self._search_tool = WebSearchTool()
+        self._search_tool = search_tool or WebSearchTool()
 
     async def run(
         self,

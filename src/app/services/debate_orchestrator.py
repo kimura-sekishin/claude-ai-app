@@ -38,9 +38,13 @@ def _build_summary_prompt(config: DebateConfig, session: DebateSession) -> str:
 class DebateOrchestrator:
     """議論全体の進行を管理するオーケストレーター。"""
 
-    def __init__(self) -> None:
-        self._agent_runner = AgentRunner()
-        self._bedrock_client = anthropic.AsyncAnthropicBedrock(
+    def __init__(
+        self,
+        agent_runner: AgentRunner | None = None,
+        bedrock_client: anthropic.AsyncAnthropicBedrock | None = None,
+    ) -> None:
+        self._agent_runner = agent_runner or AgentRunner()
+        self._bedrock_client = bedrock_client or anthropic.AsyncAnthropicBedrock(
             aws_region=os.environ.get("AWS_REGION", "us-east-1"),
         )
 

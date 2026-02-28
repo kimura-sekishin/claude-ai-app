@@ -31,7 +31,15 @@ def get_queue(session_id: str) -> DebateEventQueue:
     return queue
 
 
+def delete_queue(session_id: str) -> None:
+    """SSEストリーム終了後にイベントキューのみを削除する。
+
+    セッション本体（DebateSession）はエクスポート用に保持する。
+    """
+    _event_queues.pop(session_id, None)
+
+
 def delete_session(session_id: str) -> None:
-    """セッションとキューを削除する。"""
+    """セッションとキューを両方削除する。"""
     _sessions.pop(session_id, None)
     _event_queues.pop(session_id, None)
