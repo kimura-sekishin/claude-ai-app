@@ -11,6 +11,7 @@ claude-ai-app/                    # プロジェクトルート
 │       ├── routers/              # APIレイヤー（FastAPI Router）
 │       │   └── debate.py         # 議論セッション関連エンドポイント
 │       ├── services/             # サービスレイヤー（ビジネスロジック）
+│       │   ├── debate_service.py      # DebateService（セッションライフサイクル管理）
 │       │   ├── debate_orchestrator.py # DebateOrchestrator（議論制御）
 │       │   ├── agent_runner.py        # AgentRunner（1エージェント実行）
 │       │   └── debate_formatter.py    # format_debate_as_markdown（Markdown変換）
@@ -96,6 +97,7 @@ routers/
 **役割**: ビジネスロジックの実装（議論制御・エージェント実行）
 
 **配置ファイル**:
+- `debate_service.py`: `DebateService` クラス（セッションライフサイクル管理）
 - `debate_orchestrator.py`: `DebateOrchestrator` クラス（ターン管理・まとめ生成）
 - `agent_runner.py`: `AgentRunner` クラス（tool_useループ・1ターン発言生成）
 - `debate_formatter.py`: `format_debate_as_markdown()` 関数（議論セッション→Markdown変換）
@@ -110,6 +112,7 @@ routers/
 
 ```
 services/
+├── debate_service.py       # DebateService: セッションライフサイクル管理
 ├── debate_orchestrator.py  # DebateOrchestrator: 議論全体の制御
 ├── agent_runner.py         # AgentRunner: 1エージェントの発言生成
 └── debate_formatter.py     # format_debate_as_markdown(): Markdown変換

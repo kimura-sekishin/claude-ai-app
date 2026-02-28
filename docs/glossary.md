@@ -205,6 +205,18 @@ client = AsyncAnthropicBedrock(
 
 ## アーキテクチャ用語
 
+### DebateService
+
+**定義**: 議論セッションのライフサイクルを管理するサービスクラス。
+
+**本プロジェクトでの適用**: APIレイヤー（Router）がインフラ層（session_store）に直接依存しないよう仲介する。セッション作成・バックグラウンド議論開始・SSEキュー取得・エクスポート用セッション取得・キュー解放を一元管理する。
+
+**関連コンポーネント**: `DebateOrchestrator`, `session_store`
+
+**実装箇所**: `src/app/services/debate_service.py`
+
+---
+
 ### DebateOrchestrator
 
 **定義**: 議論セッション全体の進行を制御するサービスクラス。

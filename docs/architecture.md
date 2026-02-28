@@ -47,7 +47,7 @@
 │  HTTPリクエスト受付・バリデーション・SSE配信         │
 ├──────────────────────────────────────────────────┤
 │  サービスレイヤー                                  │
-│  DebateOrchestrator / AgentRunner                │
+│  DebateService / DebateOrchestrator / AgentRunner │
 │  議論制御・エージェント実行・ビジネスロジック          │
 ├──────────────────────────────────────────────────┤
 │  インフラレイヤー                                  │
@@ -169,13 +169,15 @@ Pydanticスキーマでサーバーサイドバリデーションを実施。
 from pydantic import BaseModel, Field
 
 class PersonaInput(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
-    description: str = Field(min_length=1, max_length=200)
+    # 省略可能（空欄時はデフォルトのペルソナ名・立場を使用）
+    name: str = Field(default="", max_length=50)
+    description: str = Field(default="", max_length=200)
 
 class DebateStartRequest(BaseModel):
-    persona_a: PersonaInput
-    persona_b: PersonaInput
+    persona_a: PersonaInput = Field(default_factory=PersonaInput)
+    persona_b: PersonaInput = Field(default_factory=PersonaInput)
     theme: str = Field(min_length=1, max_length=200)
+    max_turns: int = Field(default=2, ge=1, le=6)
 ```
 
 ### プロンプトインジェクション対策

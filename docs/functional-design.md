@@ -142,11 +142,36 @@ async def stream_debate(session_id: str) -> EventSourceResponse: ...
 ```
 
 **依存関係**:
-- `DebateOrchestrator`
+- `DebateService`
 
 ---
 
-### 2. DebateOrchestrator（議論制御）
+### 2. DebateService（セッションライフサイクル管理）
+
+**責務**:
+- セッション作成とバックグラウンド議論開始の一元管理
+- APIレイヤーがインフラ層（session_store）に直接依存しないよう仲介する
+
+**インターフェース**:
+```python
+class DebateService:
+    @staticmethod
+    def create_and_start(config: DebateConfig) -> tuple[str, DebateEventQueue]: ...
+    @staticmethod
+    def get_stream_queue(session_id: str) -> DebateEventQueue: ...
+    @staticmethod
+    def get_session_for_export(session_id: str) -> DebateSession: ...
+    @staticmethod
+    def release_queue(session_id: str) -> None: ...
+```
+
+**依存関係**:
+- `DebateOrchestrator`
+- `session_store`（インフラレイヤー）
+
+---
+
+### 3. DebateOrchestrator（議論制御）
 
 **責務**:
 - ペルソナAとBの発言順序を管理する
@@ -174,7 +199,7 @@ class DebateOrchestrator:
 
 ---
 
-### 3. AgentRunner（1エージェントの実行）
+### 4. AgentRunner（1エージェントの実行）
 
 **責務**:
 - 1ペルソナの1ターン発言を生成する
@@ -213,7 +238,7 @@ class AgentRunner:
 
 ---
 
-### 4. WebSearchTool（Web検索ツール）
+### 5. WebSearchTool（Web検索ツール）
 
 **責務**:
 - Claudeからの検索クエリを受け取りWeb検索を実行する
