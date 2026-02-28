@@ -21,7 +21,9 @@ claude-ai-app/                    # プロジェクトルート
 │       │   ├── debate.py         # Persona, DebateSession等の型定義
 │       │   └── errors.py         # カスタム例外クラス定義
 │       └── static/               # フロントエンド静的ファイル
-│           └── index.html        # 設定画面・議論画面・CSS・JS（単一ファイルSPA）
+│           ├── index.html        # HTML構造（設定画面・議論画面）
+│           ├── style.css         # スタイルシート
+│           └── app.js            # JavaScriptアプリケーションロジック
 ├── tests/                        # テストコード
 │   ├── test_app.py               # アプリ起動・ルーティングのスモークテスト
 │   ├── unit/                     # ユニットテスト
@@ -167,13 +169,17 @@ models/
 **役割**: HTML/CSS/JSによるフロントエンド一式
 
 **配置ファイル**:
-- `index.html`: HTML・CSS・JS をすべて含む単一ファイルSPA（設定画面 + 議論画面）
+- `index.html`: HTML構造のみ（設定画面 + 議論画面）
+- `style.css`: アプリ全体のスタイルシート
+- `app.js`: DOM操作・SSE接続・イベント処理等のアプリロジック
 
 **配信方法**: FastAPIの `StaticFiles` で `/` にマウント
 
 ```
 static/
-└── index.html   # SPA（設定画面 + 議論画面 + スタイル + ロジックを1ファイルで管理）
+├── index.html   # HTML構造（設定画面 + 議論画面）
+├── style.css    # スタイルシート
+└── app.js       # JavaScriptアプリケーションロジック
 ```
 
 ---

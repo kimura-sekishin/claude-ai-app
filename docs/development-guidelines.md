@@ -254,6 +254,37 @@ system_prompt = user_input  # プロンプトインジェクション危険
 
 ---
 
+## フロントエンド開発ガイドライン
+
+### ファイル構成
+
+| ファイル | 役割 |
+|---------|------|
+| `src/app/static/index.html` | HTML構造のみ。インラインスタイル・インラインスクリプト禁止 |
+| `src/app/static/style.css` | アプリ全体のスタイル定義 |
+| `src/app/static/app.js` | DOM操作・SSE接続・イベント処理等のアプリロジック |
+
+### 原則
+
+- **HTML・CSS・JSは必ず分離する**（`<style>` タグや `<script>` インラインブロックは禁止）
+- **Vanilla JSのみ使用**（React・Vue等の外部フレームワーク導入禁止）
+- **CSSはグローバルスコープ**（CSS Modules・CSS-in-JS不使用）
+
+### セキュリティ
+
+```js
+// ✅ 良い例: ユーザー入力・外部データは必ず escHtml でエスケープしてから innerHTML に挿入
+bubble.innerHTML = `<span>${escHtml(name)}</span>`;
+
+// ✅ 良い例: CSSクラス名はホワイトリストで検証して任意文字列注入を防ぐ
+const safeClass = speaker === 'persona_a' ? 'persona_a' : 'persona_b';
+
+// ❌ 悪い例: ユーザー入力をそのまま innerHTML に代入（XSS危険）
+bubble.innerHTML = name;
+```
+
+---
+
 ## 開発環境セットアップ
 
 ### 必要なツール
