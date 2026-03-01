@@ -198,7 +198,8 @@ static/
 tests/unit/
 ├── services/
 │   ├── test_debate_orchestrator.py  # DebateOrchestratorのターン管理ロジック
-│   └── test_agent_runner.py         # AgentRunnerのtool_useループ
+│   ├── test_agent_runner.py         # AgentRunnerのtool_useループ
+│   └── test_debate_service.py       # DebateServiceのセッション管理・DI
 ├── infra/
 │   ├── test_web_search.py           # WebSearchToolの正常系・エラー系
 │   └── test_session_store.py        # SessionStoreのCRUD操作

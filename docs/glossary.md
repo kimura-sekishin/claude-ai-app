@@ -209,7 +209,7 @@ client = AsyncAnthropicBedrock(
 
 **定義**: 議論セッションのライフサイクルを管理するサービスクラス。
 
-**本プロジェクトでの適用**: APIレイヤー（Router）がインフラ層（session_store）に直接依存しないよう仲介する。セッション作成・バックグラウンド議論開始・SSEキュー取得・エクスポート用セッション取得・キュー解放を一元管理する。
+**本プロジェクトでの適用**: APIレイヤー（Router）がインフラ層（session_store）に直接依存しないよう仲介する。セッション作成・バックグラウンド議論開始・SSEキュー取得・エクスポート用セッション取得・キュー解放を一元管理する。コンストラクタで `DebateOrchestrator` を受け取るDIパターンを採用しており、テスト時にモックへ差し替え可能。`routers/debate.py` ではモジュールロード時に `_debate_service = DebateService()` としてシングルトン相当のインスタンスを生成して使用する。
 
 **関連コンポーネント**: `DebateOrchestrator`, `session_store`
 
@@ -223,7 +223,7 @@ client = AsyncAnthropicBedrock(
 
 **本プロジェクトでの適用**: ペルソナAとBの発言順序管理・`AgentRunner`の呼び出し・まとめ生成・SSEキューへのイベント送信を担当する。
 
-**関連コンポーネント**: `AgentRunner`, `asyncio.Queue`
+**関連コンポーネント**: `AgentRunner`, `asyncio.Queue`, `AsyncAnthropicBedrock`（DI可能・`AgentRunner` と共有）
 
 **実装箇所**: `src/app/services/debate_orchestrator.py`
 
