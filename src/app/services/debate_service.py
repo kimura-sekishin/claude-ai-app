@@ -23,8 +23,10 @@ class DebateService:
     セッション管理・議論開始・ストリーム取得・エクスポート取得を一元化する。
     """
 
-    @staticmethod
-    def create_and_start(config: DebateConfig) -> tuple[str, DebateEventQueue]:
+    def __init__(self, orchestrator: DebateOrchestrator | None = None) -> None:
+        self._orchestrator = orchestrator or DebateOrchestrator()
+
+    def create_and_start(self, config: DebateConfig) -> tuple[str, DebateEventQueue]:
         """セッションを作成し、バックグラウンドで議論を開始する。
 
         Args:
@@ -41,17 +43,15 @@ class DebateService:
         )
         queue = session_store.create_session(session)
 
-        orchestrator = DebateOrchestrator()
         task = asyncio.create_task(
-            orchestrator.run(config=config, event_queue=queue, session=session)
+            self._orchestrator.run(config=config, event_queue=queue, session=session)
         )
         _background_tasks.add(task)
         task.add_done_callback(_background_tasks.discard)
 
         return session_id, queue
 
-    @staticmethod
-    def get_stream_queue(session_id: str) -> DebateEventQueue:
+    def get_stream_queue(self, session_id: str) -> DebateEventQueue:
         """SSEストリーム用のイベントキューを取得する。
 
         Raises:
@@ -60,8 +60,7 @@ class DebateService:
         session_store.get_session(session_id)  # 存在確認
         return session_store.get_queue(session_id)
 
-    @staticmethod
-    def get_session_for_export(session_id: str) -> DebateSession:
+    def get_session_for_export(self, session_id: str) -> DebateSession:
         """エクスポート用のセッションを取得する。
 
         Raises:
@@ -69,8 +68,7 @@ class DebateService:
         """
         return session_store.get_session(session_id)
 
-    @staticmethod
-    def release_queue(session_id: str) -> None:
+    def release_queue(self, session_id: str) -> None:
         """SSEストリーム終了後にイベントキューを解放する。
 
         セッション本体（DebateSession）はエクスポート用に保持する。

@@ -1,12 +1,13 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-
-from app.routers import debate
 
 load_dotenv()
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+from app.routers import debate  # noqa: E402
 
 app = FastAPI(title="AI討論 / AI Debate", version="0.1.0")
 

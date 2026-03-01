@@ -21,6 +21,9 @@ from app.services.debate_service import DebateService
 
 router = APIRouter(prefix="/api/debate", tags=["debate"])
 
+# デフォルトのDebateServiceインスタンス（モジュールロード時に1度だけ作成）
+_debate_service = DebateService()
+
 # SSEイベントの最大待機時間（秒）
 _SSE_TIMEOUT_SECONDS = 300.0
 
@@ -42,7 +45,7 @@ async def start_debate(request: DebateStartRequest) -> DebateStartResponse:
         theme=request.theme,
         max_turns=request.max_turns,
     )
-    session_id, _ = DebateService.create_and_start(config)
+    session_id, _ = _debate_service.create_and_start(config)
     return DebateStartResponse(session_id=session_id)
 
 
@@ -50,7 +53,7 @@ async def start_debate(request: DebateStartRequest) -> DebateStartResponse:
 async def stream_debate(session_id: str) -> EventSourceResponse:
     """SSE でリアルタイムに議論イベントを配信する。"""
     try:
-        queue = DebateService.get_stream_queue(session_id)
+        queue = _debate_service.get_stream_queue(session_id)
     except SessionNotFoundError:
         raise HTTPException(status_code=404, detail="セッションが見つかりません")
 
@@ -70,7 +73,7 @@ async def stream_debate(session_id: str) -> EventSourceResponse:
                     break
         finally:
             # ストリーム終了後にキューを解放（セッションはエクスポート用に保持）
-            DebateService.release_queue(session_id)
+            _debate_service.release_queue(session_id)
 
     return EventSourceResponse(event_generator())
 
@@ -79,7 +82,7 @@ async def stream_debate(session_id: str) -> EventSourceResponse:
 async def export_debate(session_id: str) -> Response:
     """議論セッションをMarkdownファイルとしてダウンロードする。"""
     try:
-        session = DebateService.get_session_for_export(session_id)
+        session = _debate_service.get_session_for_export(session_id)
     except SessionNotFoundError:
         raise HTTPException(status_code=404, detail="セッションが見つかりません")
 

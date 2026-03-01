@@ -43,9 +43,11 @@ class DebateOrchestrator:
         agent_runner: AgentRunner | None = None,
         bedrock_client: anthropic.AsyncAnthropicBedrock | None = None,
     ) -> None:
-        self._agent_runner = agent_runner or AgentRunner()
         self._bedrock_client = bedrock_client or anthropic.AsyncAnthropicBedrock(
             aws_region=os.environ.get("AWS_REGION", "us-east-1"),
+        )
+        self._agent_runner = agent_runner or AgentRunner(
+            bedrock_client=self._bedrock_client
         )
 
     async def run(

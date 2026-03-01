@@ -11,9 +11,12 @@ from app.models.errors import SearchError
 class WebSearchTool:
     """Tavily APIを使ったWeb検索ツール。"""
 
-    def __init__(self) -> None:
-        api_key = os.environ["TAVILY_API_KEY"]
-        self._client = TavilyClient(api_key=api_key)
+    def __init__(self, client: TavilyClient | None = None) -> None:
+        if client is not None:
+            self._client = client
+        else:
+            api_key = os.environ["TAVILY_API_KEY"]
+            self._client = TavilyClient(api_key=api_key)
 
     async def search(self, query: str) -> str:
         """Web検索を実行し、結果をテキスト形式で返す。

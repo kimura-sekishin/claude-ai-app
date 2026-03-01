@@ -60,31 +60,42 @@ def _build_messages(
     theme: str,
 ) -> list[MessageParam]:
     """会話履歴をAnthropicのmessages形式に変換する。"""
-    messages: list[dict[str, Any]] = []
+    messages: list[MessageParam] = []
 
     if not history:
         # 最初の発言: テーマを提示するユーザーメッセージを追加
         messages.append(
-            {
-                "role": "user",
-                "content": f"以下のテーマで議論を始めてください: {theme}",
-            }
+            cast(
+                MessageParam,
+                {
+                    "role": "user",
+                    "content": f"以下のテーマで議論を始めてください: {theme}",
+                },
+            )
         )
-        return cast(list[MessageParam], messages)
+        return messages
 
+    last_role = ""
     for turn in history:
         role = "assistant" if turn.speaker == current_speaker else "user"
-        messages.append({"role": role, "content": turn.content})
+        messages.append(cast(MessageParam, {"role": role, "content": turn.content}))
+        last_role = role
 
     # 最後が "assistant" の場合は続きを促すユーザーメッセージが必要。
     # これは同一話者の2ターン目以降にのみ発動する。
     # （前ターンが current_speaker の発言 → role="assistant" として変換されるため）
-    if messages and messages[-1]["role"] == "assistant":
+    if last_role == "assistant":
         messages.append(
-            {"role": "user", "content": "続けて、あなたの主張を述べてください。"}
+            cast(
+                MessageParam,
+                {
+                    "role": "user",
+                    "content": "続けて、あなたの主張を述べてください。",
+                },
+            )
         )
 
-    return cast(list[MessageParam], messages)
+    return messages
 
 
 class AgentRunner:
@@ -203,14 +214,10 @@ class AgentRunner:
                 )
 
             # tool_result を追加して再呼び出し（上限到達後はtools=[]でツールを無効化）
-            extra = cast(
-                list[MessageParam],
-                [
-                    {"role": "assistant", "content": assistant_content},
-                    {"role": "user", "content": tool_results},
-                ],
-            )
-            messages = list(messages) + extra
+            messages = list(messages) + [
+                cast(MessageParam, {"role": "assistant", "content": assistant_content}),
+                cast(MessageParam, {"role": "user", "content": tool_results}),
+            ]
             next_tools = (
                 [] if search_count >= MAX_SEARCHES_PER_TURN else [_WEB_SEARCH_TOOL]
             )
